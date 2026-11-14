@@ -16,7 +16,7 @@ class CellFreeISAC3DEnv(gym.Env):
     def __init__(self, M=2, N=2, K=15, objective_type='max-sum'):
         super(CellFreeISAC3DEnv, self).__init__()
         self.objective_type = objective_type 
-        print(f"正在初始化 3D Cell-Free ISAC 环境...")
+        print(f"Initializing the 3D Cell-Free ISAC environment...")
         
         self.pg_database_5d = np.load(get_resource_path_env('paris_pg_database_3d.npy'))
         self.pg_database = self.pg_database_5d.reshape(-1, 125, 125)      
@@ -77,7 +77,7 @@ class CellFreeISAC3DEnv(gym.Env):
         self.state_dim = (self.K * 3) + (self.num_targets * 2) 
         self.observation_space = spaces.Box(low=-300.0, high=300.0, shape=(self.state_dim,), dtype=np.float32)
         
-        # 🎯 回归 12 维虚拟坐标系统！
+        # Back to the 12-dimensional virtual coordinate system!
         self.action_dim = (self.M + self.N) * 3
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(self.action_dim,), dtype=np.float32)
 
@@ -192,11 +192,11 @@ class CellFreeISAC3DEnv(gym.Env):
     def step(self, continuous_action):
         num_aps = self.M + self.N
         
-        # 1. 从 Actor 获取并格式化连续虚拟坐标 (范围 -1 到 1)
+        # 1. Get the continuous virtual coordinates from the Actor and format them (range -1 to 1)
         raw_action = np.clip(continuous_action, -1.0, 1.0)
         virtual_norm = raw_action.reshape((num_aps, 3))
         
-        # 2. 映射到物理空间进行吸附
+        # 2. Map to physical space for snapping
         virtual_phys = np.zeros_like(virtual_norm)
         virtual_phys[:, 0] = virtual_norm[:, 0] * 250.0  
         virtual_phys[:, 1] = virtual_norm[:, 1] * 250.0  
@@ -206,7 +206,7 @@ class CellFreeISAC3DEnv(gym.Env):
         top_k_indices = []
         snapped_phys = []
         
-        # 吸附到最近物理基站
+        # Snap to the nearest physical AP
         for i in range(num_aps):
             dist_sq = np.sum((valid_positions - virtual_phys[i])**2, axis=1)
             for already_selected_idx in top_k_indices:
@@ -225,20 +225,20 @@ class CellFreeISAC3DEnv(gym.Env):
         fim_det = self.calculate_sensing_fim(tx_indices, rx_indices)
         
         # =========================================================================
-        # 🎯 核心护城河：计算虚拟坐标与被吸附坐标的归一化 MSE 误差！
-        # 让神经网络能够顺着这个“引力漏斗”完美地贴合物理基站！
+        # Key mechanism: compute the normalized MSE between the virtual coordinates and the snapped coordinates!
+        # This lets the neural network follow this "gravity funnel" and fit the physical APs perfectly!
         # =========================================================================
         snapped_phys = np.array(snapped_phys)
         snapped_norm = np.zeros_like(snapped_phys)
-        # 将被选中的物理基站反向缩放到 [-1, 1] 空间，用于和 Actor 输出做对比
+        # Scale the selected physical APs back to the [-1, 1] space for comparison with the Actor output
         snapped_norm[:, 0] = snapped_phys[:, 0] / 250.0
         snapped_norm[:, 1] = snapped_phys[:, 1] / 250.0
         snapped_norm[:, 2] = (snapped_phys[:, 2] - 20.0) / 15.0
         
-        # 计算完美平滑的连续梯度惩罚（乘以 3.0 放大梯度引导）
+        # Compute the perfectly smooth continuous gradient penalty (multiplied by 3.0 to amplify the gradient guidance)
         norm_penalty = np.sum((virtual_norm - snapped_norm)**2) * 3.0 
         
-        # 通信得分与感知得分
+        # Communication score and sensing score
         safe_sum_rate = max(sum_rate, 1e-5) 
         norm_rate = safe_sum_rate / 10.0
         safe_fim_det = max(fim_det, 1e-15) 

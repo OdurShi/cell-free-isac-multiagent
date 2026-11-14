@@ -27,7 +27,7 @@ def evaluate_deployment(env, ap_indices):
     return reward
 
 def run_simulated_annealing(env, max_iter=2000):
-    print("🔥 正在真实运行 模拟退火算法 (SA)...")
+    print("Actually running the simulated annealing algorithm (SA)...")
     start_time = time.time()
     valid_aps = env.valid_indices.tolist()
     num_aps = env.M + env.N
@@ -37,7 +37,7 @@ def run_simulated_annealing(env, max_iter=2000):
     
     best_solution, best_reward = deepcopy(current_solution), current_reward
     temp = 100.0
-    history_evals = [] # 记录每一次真实评估的分数
+    history_evals = [] # record the score of every real evaluation
 
     for i in range(max_iter):
         new_solution = deepcopy(current_solution)
@@ -62,7 +62,7 @@ def run_simulated_annealing(env, max_iter=2000):
     return history_evals, best_solution, best_reward, execution_time
 
 def run_genetic_algorithm(env, max_evals=2000, pop_size=50):
-    print("🧬 正在真实运行 遗传算法 (GA)...")
+    print("Actually running the genetic algorithm (GA)...")
     start_time = time.time()
     valid_aps = env.valid_indices.tolist()
     num_aps = env.M + env.N
@@ -107,17 +107,17 @@ def run_genetic_algorithm(env, max_evals=2000, pop_size=50):
     return history_evals[:max_evals], best_solution, best_reward, execution_time
 
 def moving_average(data, window_size=50):
-    """计算滑动平均，用于平滑剧烈波动的真实数据"""
+    """Compute the moving average, used to smooth the strongly fluctuating real data"""
     return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
 
 def main():
     if not os.path.exists('drl_real_curve.npy'):
-        print("❌ 找不到 'drl_real_curve.npy'！请先运行修改后的 train.py。")
+        print("[ERROR] Cannot find 'drl_real_curve.npy'! Please run the modified train.py first.")
         return
 
-    print("🤖 正在加载真实的 ISAC-DRL 训练历史数据...")
+    print("Loading the real ISAC-DRL training history data...")
     drl_history = np.load('drl_real_curve.npy')
-    # 由于现在的历史是波动分数，最高分需要重新找出
+    # The history now holds fluctuating scores, so the highest score has to be found again
     drl_best_reward = np.max(drl_history)
     
     env = CellFreeISAC3DEnv(M=2, N=2, K=15, objective_type='max-sum')
@@ -128,29 +128,29 @@ def main():
     ga_history, ga_best_sol, ga_best_r, ga_time = run_genetic_algorithm(env, max_evals=total_evals, pop_size=50)
 
     # ==========================================================
-    # 🎨 绘制带有真实波动和滑动平均的学术图表
+    # Plot an academic figure with the real fluctuations and the moving average
     # ==========================================================
     plt.style.use('seaborn-v0_8-whitegrid')
     fig, ax = plt.subplots(figsize=(11, 7))
     
-    window = 50 # 滑动窗口大小
+    window = 50 # moving-window size
     x_smooth = np.arange(window-1, total_evals)
     
-    # 1. 绘制 SA 的真实毛刺和趋势线
+    # 1. Plot the real spikes and the trend line of SA
     ax.plot(sa_history, color='#F39C12', alpha=0.15) 
     ax.plot(x_smooth, moving_average(sa_history, window), label='Simulated Annealing (SA)', color='#F39C12', linewidth=2.5)
     
-    # 2. 绘制 GA 的真实毛刺和趋势线
+    # 2. Plot the real spikes and the trend line of GA
     ax.plot(ga_history, color='#3498DB', alpha=0.15)
     ax.plot(x_smooth, moving_average(ga_history, window), label='Genetic Algorithm (GA)', color='#3498DB', linewidth=2.5)
     
-    # 3. 绘制 DRL 的真实毛刺和趋势线
+    # 3. Plot the real spikes and the trend line of DRL
     ax.plot(drl_history, color='#E74C3C', alpha=0.15)
     ax.plot(x_smooth, moving_average(drl_history, window), label='SAC Algorithm', color='#E74C3C', linewidth=3.0)
     
     ax.set_title('Convergence Performance Comparison Between SAC and Traditional Heuristic Algorithms', fontsize=16, fontweight='bold', pad=20)
     ax.set_xlabel('Optimization Steps (Evaluations / Episodes)', fontsize=14, fontweight='bold')
-    # 修改了Y轴标签，更准确描述当前数据
+    # Changed the Y-axis label to describe the current data more accurately
     ax.set_ylabel('ISAC Fusion-Based Reward', fontsize=14, fontweight='bold')
     
     plt.xticks(fontsize=11)
@@ -171,7 +171,7 @@ def main():
     
     plt.tight_layout()
     plt.savefig('real_fluctuating_comparison.png', dpi=300, bbox_inches='tight')
-    print("\n✅ 带波动的真实对比图已生成并保存为 'real_fluctuating_comparison.png'")
+    print("\nThe real comparison figure with fluctuations has been generated and saved as 'real_fluctuating_comparison.png'")
 
 if __name__ == '__main__':
     main()

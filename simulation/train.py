@@ -177,9 +177,9 @@ class EnvWrapper:
         return next_state, reward, done, info
 
 def main():
-    print("启动 SAC 智能体训练...")
+    print("Starting SAC agent training...")
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print(f"训练设备: {device}")
+    print(f"Training device: {device}")
 
     objective = 'max-sum'  
     env = EnvWrapper(objective_type=objective)
@@ -197,7 +197,7 @@ def main():
     batch_size = 256
     start_training_size = 2000 
     
-    print("正在进行初始随机探索填充 Buffer...")
+    print("Filling the buffer with initial random exploration...")
     state = env.reset()
     for _ in range(start_training_size):
         action = np.random.uniform(-1, 1, env.action_dim)
@@ -241,7 +241,7 @@ def main():
                 global_best_ep = episode
                 best_indices = info.get('selected_aps', [])
                 global_best_coords = " | ".join([
-                    f"编号{idx:3d}(X:{env.env.candidate_positions[idx][0]:>5.0f}, "
+                    f"ID{idx:3d}(X:{env.env.candidate_positions[idx][0]:>5.0f}, "
                     f"Y:{env.env.candidate_positions[idx][1]:>5.0f}, "
                     f"Z:{env.env.candidate_positions[idx][2]:>4.0f})" 
                     for idx in best_indices
@@ -264,26 +264,26 @@ def main():
         
         selected_indices = info.get('selected_aps', [])
         coords_str = " | ".join([
-            f"编号{idx:3d}(X:{env.env.candidate_positions[idx][0]:>5.0f}, "
+            f"ID{idx:3d}(X:{env.env.candidate_positions[idx][0]:>5.0f}, "
             f"Y:{env.env.candidate_positions[idx][1]:>5.0f}, "
             f"Z:{env.env.candidate_positions[idx][2]:>4.0f})" 
             for idx in selected_indices
         ])
         
         print(f" Ep: {episode:3d} | Avg Reward: {avg_reward:>6.2f} | Cri-Loss: {ep_loss_c:>6.1f} | Alpha: 0.05 (Locked)")
-        print(f"    回合平均奖励拆解 -> 通信: {avg_n_rate:.2f} | 感知: {avg_n_fim:.2f} | 空间微调: -{avg_n_pen:.2f}")
-        print(f"    回合平均物理性能 -> 通信: {avg_sum_rate:.2f} bps/Hz | 感知 FIM: {avg_fim:.2e}")
-        print(f"    回合末基站坐标: [ {coords_str} ]\n")
+        print(f"    Episode-average reward terms -> comm: {avg_n_rate:.2f} | sensing: {avg_n_fim:.2f} | snapping penalty: -{avg_n_pen:.2f}")
+        print(f"    Episode-average physical metrics -> comm: {avg_sum_rate:.2f} bps/Hz | sensing FIM: {avg_fim:.2e}")
+        print(f"    AP coordinates at episode end: [ {coords_str} ]\n")
         #pure_physical_reward = avg_n_rate + avg_n_fim
         drl_best_history.append(ep_best_raw_reward)
 
     print("\n" + "="*60)
-    print(f" 训练结束，全局最优解出现于 Ep: {global_best_ep}")
-    print(f" 全局最优系统效能 -> 通信 Sum-Rate: {global_best_rate:.2f} bps/Hz | 感知 FIM: {global_best_fim:.2e}")
-    print(f" 最优基站部署策略 -> [ {global_best_coords} ]")
+    print(f" Training finished, global best solution found at Ep: {global_best_ep}")
+    print(f" Global best system performance -> comm sum-rate: {global_best_rate:.2f} bps/Hz | sensing FIM: {global_best_fim:.2e}")
+    print(f" Best AP deployment strategy -> [ {global_best_coords} ]")
     print("="*60 + "\n")
     
     np.save('drl_real_curve.npy', np.array(drl_best_history))
-    print(" DRL 训练数据已保存至 'drl_real_curve.npy'")
+    print(" DRL training data saved to 'drl_real_curve.npy'")
 if __name__ == '__main__':
     main()

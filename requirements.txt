@@ -1,0 +1,21 @@
+# Dependencies as revealed by the imports of the scripts in simulation/.
+# The original environment was not recorded, so versions are not pinned except where the
+# code depends on a specific API.
+
+# --- needed by every script -------------------------------------------------------------
+numpy<2                # isac_env.py uses the classic Gym package, which predates NumPy 2
+matplotlib
+scipy                  # main_app.py (cKDTree, gaussian_filter1d)
+
+# --- environment, training, baselines (isac_env.py, train.py, compare_baselines.py) ------
+gym==0.26.2            # classic Gym API: reset() -> obs, step() -> (obs, reward, done, info)
+torch                  # train.py (SAC)
+
+# --- ray tracing (main.py, generate_offline_database.py, main_app.py, preview_model.py) --
+sionna                 # needs sionna.rt.RadioMapSolver and sionna.rt.scene.etoile
+tensorflow             # imported by the ray-tracing scripts
+
+# --- desktop GUI and 3-D viewers (main_app.py, preview_model.py) -------------------------
+customtkinter
+pyvista
+open3d

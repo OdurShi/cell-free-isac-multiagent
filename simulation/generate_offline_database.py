@@ -1,5 +1,5 @@
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1' # 强制 CPU
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1' # force CPU
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import tensorflow as tf
@@ -9,33 +9,33 @@ from sionna.rt import load_scene, Transmitter, PlanarArray, RadioMapSolver
 import time
 
 def main():
-    # 1. 加载场景与核心物理参数配置
+    # 1. Load the scene and configure the core physical parameters
     scene = load_scene(sionna.rt.scene.etoile)
     scene.frequency = 28e9 
     
     scene.tx_array = PlanarArray(num_rows=1, num_cols=1, pattern="iso", polarization="V")
     scene.rx_array = PlanarArray(num_rows=1, num_cols=1, pattern="iso", polarization="V")
 
-    # 2. 定义三维候选区域
+    # 2. Define the 3D candidate region
     x_coords = np.linspace(-250, 250, 11)
     y_coords = np.linspace(-250, 250, 11)
     
-    # ✅ 核心修改 1：增加 Z 轴的高度分层采样 (例如从 5米 到 35米，步长 5米)
+    # Key change 1: add layered height sampling along the Z axis (e.g. from 5 m to 35 m in steps of 5 m)
     z_coords = np.linspace(5, 35, 7) 
     
     solver = RadioMapSolver()
-    solver.max_depth = 4 # 默认通常是 3，增加一次反射计算
-    # ✅ 核心修改 2：预先分配一个 5D 的 NumPy 数组，方便 SAC 算法后期直接通过 3D 索引查表
-    # 维度含义: [X坐标索引, Y坐标索引, Z坐标索引, 接收机X网格数(125), 接收机Y网格数(125)]
+    solver.max_depth = 4 # the default is usually 3; add one more reflection to the computation
+    # Key change 2: pre-allocate a 5D NumPy array so that the SAC algorithm can later look values up directly by 3D index
+    # Meaning of the dimensions: [X coordinate index, Y coordinate index, Z coordinate index, number of receiver X grid cells (125), number of receiver Y grid cells (125)]
     database_3d = np.zeros((len(x_coords), len(y_coords), len(z_coords), 125, 125), dtype=np.float32)
     positions = []
 
     total_points = len(x_coords) * len(y_coords) * len(z_coords)
-    print(f"🚀 开始生成 3D 离线指纹库，共计 {total_points} 个候选点...")
+    print(f"Starting generation of the 3D offline fingerprint database, {total_points} candidate points in total...")
     start_time = time.time()
 
     count = 0
-    # 嵌套循环：遍历 3D 空间中的每一个候选基站位置
+    # Nested loops: iterate over every candidate AP position in 3D space
     for i, x in enumerate(x_coords):
         for j, y in enumerate(y_coords):
             for k, z in enumerate(z_coords):
@@ -43,12 +43,12 @@ def main():
                 pos = [float(x), float(y), float(z)]
                 positions.append(pos)
                 
-                # 添加临时全向基站
+                # Add a temporary omnidirectional AP
                 tx = Transmitter(name="temp_tx", position=pos, orientation=[0, 0, 0])
                 scene.add(tx)
                 
-                # 射线追踪计算
-                # 注意：接收机(用户)所在的覆盖面始终固定在 z=1.5 米的地面高度
+                # Ray-tracing computation
+                # Note: the coverage plane of the receivers (users) is always fixed at a ground-level height of z=1.5 m
                 radio_map = solver(scene, 
                                    cell_size=[4, 4], 
                                    center=[0, 0, 1.5], 
@@ -56,29 +56,29 @@ def main():
                                    orientation=[0, 0, 0],
                                    samples_per_tx=int(5e6)) 
                 
-                # 获取线性信道增益 (Linear Path Gain)
+                # Get the linear channel gain (Linear Path Gain)
                 pg = radio_map.path_gain.numpy().astype(np.float32)
                 
-                # 直接将这张二维热力图存入 5D 矩阵对应的 3D 槽位中
+                # Store this 2D heatmap directly in the corresponding 3D slot of the 5D matrix
                 database_3d[i, j, k, :, :] = np.squeeze(pg)
                 
-                # 移除当前基站，为下一个点腾出空间
+                # Remove the current AP to make room for the next point
                 scene.remove("temp_tx")
                 
-                # 打印进度 (因为计算量变大了，可以适当调整打印频率)
+                # Print progress (the computation is heavier now, so the print frequency can be adjusted as appropriate)
                 if count % 20 == 0:
                     elapsed = time.time() - start_time
-                    print(f"✅ 已完成 {count}/{total_points} | 耗时: {elapsed:.1f}s")
+                    print(f"Completed {count}/{total_points} | Elapsed: {elapsed:.1f}s")
 
-    # 3. 保存数据库
+    # 3. Save the database
     np.save('paris_pg_database_3d.npy', database_3d)
     np.save('candidate_positions_3d.npy', np.array(positions))
     
     print("-" * 50)
-    print(f"🎉 3D 数据库生成完毕！总耗时: {(time.time()-start_time)/60:.1f} 分钟")
-    print(f"👉 数据库矩阵最终形状: {database_3d.shape}")
-    print("👉 paris_pg_database_3d.npy (线性信道增益矩阵)")
-    print("👉 candidate_positions_3d.npy (对应的3D坐标)")
+    print(f"3D database generation finished. Total time: {(time.time()-start_time)/60:.1f} minutes")
+    print(f"Final shape of the database matrix: {database_3d.shape}")
+    print("paris_pg_database_3d.npy (linear channel gain matrix)")
+    print("candidate_positions_3d.npy (corresponding 3D coordinates)")
     print("-" * 50)
 
 if __name__ == "__main__":

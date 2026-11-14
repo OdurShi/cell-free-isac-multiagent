@@ -3,47 +3,47 @@ import sionna
 import open3d as o3d
 
 def view_model(ply_path):
-    """通用的 3D 模型加载与渲染函数"""
-    print(f"⚙️ 正在使用 Open3D 加载网格数据...\n文件路径: {ply_path}")
+    """Generic function for loading and rendering a 3D model"""
+    print(f"Loading the mesh data with Open3D...\nFile path: {ply_path}")
     mesh = o3d.io.read_triangle_mesh(ply_path)
     
     if mesh.is_empty():
-        print("❌ 模型加载失败或为空！")
+        print("[ERROR] Failed to load the model, or the model is empty!")
         return
         
-    # 计算顶点法线，让建筑物在光照下产生真实的立体阴影
+    # Compute the vertex normals so that the buildings show realistic 3D shading under lighting
     mesh.compute_vertex_normals() 
     
-    print("🚀 正在弹出 3D 交互查看器...")
+    print("Opening the interactive 3D viewer...")
     print("-" * 30)
-    print("💡 【操作指南】")
-    print("   👉 鼠标左键拖拽：全视角旋转")
-    print("   👉 Shift + 鼠标左键拖拽：平移地图")
-    print("   👉 鼠标滚轮：拉近/推远")
-    print("   👉 按 'Q' 键或直接点红叉：退出查看器")
+    print("[Operation guide]")
+    print("   Left mouse button drag: rotate the view freely")
+    print("   Shift + left mouse button drag: pan the map")
+    print("   Mouse wheel: zoom in/out")
+    print("   Press the 'Q' key or click the red close button: exit the viewer")
     print("-" * 30)
     
-    # 唤醒本地图形界面进行渲染
+    # Launch the local GUI for rendering
     o3d.visualization.draw_geometries([mesh], 
                                       window_name="Sionna 3D City Viewer",
                                       width=1280, height=720,
                                       left=100, top=100)
 
 def main():
-    print("🎬 正在定位 Sionna 内置的巴黎星形广场 3D 模型...")
+    print("Locating the 3D model of Place de l'Etoile, Paris, built into Sionna...")
     
-    # 获取 Sionna 底层巴黎场景的 XML 绝对路径
+    # Get the absolute path of the XML file of Sionna's underlying Paris scene
     paris_xml_path = sionna.rt.scene.etoile
     
-    # 获取该 XML 文件所在的目录路径
+    # Get the path of the directory that contains this XML file
     scene_dir = os.path.dirname(paris_xml_path)
-    print(f"🔍 正在深入目录搜寻真正的 3D 文件: {scene_dir}")
+    print(f"Searching the directory for the actual 3D files: {scene_dir}")
     
-    # 智能搜索机制：遍历该目录及其所有子目录，寻找 .ply 或 .obj 文件
+    # Smart search mechanism: walk this directory and all its subdirectories looking for .ply or .obj files
     target_mesh = None
     for root, dirs, files in os.walk(scene_dir):
         for file in files:
-            # 找到第一个支持的 3D 格式文件就抓取它
+            # Take the first file found in a supported 3D format
             if file.endswith('.ply') or file.endswith('.obj'):
                 target_mesh = os.path.join(root, file)
                 break
@@ -51,10 +51,10 @@ def main():
             break
             
     if target_mesh:
-        print(f"✅ 抓到隐藏的模型文件啦：{target_mesh}")
+        print(f"Found the hidden model file: {target_mesh}")
         view_model(target_mesh)
     else:
-        print("❌ 见鬼了，在这个目录里翻了个底朝天也没找到 3D 源文件！")
+        print("[ERROR] No 3D source file was found anywhere in this directory!")
 
 if __name__ == "__main__":
     main()
