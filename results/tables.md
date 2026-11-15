@@ -371,3 +371,607 @@ Tuning scenarios [1000, 1001, 1002, 1003, 1004], N = 8, 2 repetitions.
 | Bandit learners, team reward | {'batch': 32, 'learning_rate': 2.0} | 0.9910 | 0.9551 | yes |
 | Bandit learners, difference reward | {'batch': 16, 'learning_rate': 2.0} | 0.9824 | 0.9204 | yes |
 | Sampled best response | {'n_random': 32, 'n_near': 16, 'patience_rounds': 5} | 1.0000 | 0.9996 | yes |
+
+## E8 blockage-aware sensing (`e8_blockage.json`)
+
+Line-of-sight tables (`data/aerial_los.npz`, statistics from `data/aerial_manifest.json`): exact visibility tests between the 345 valid sites and the centres of the 125 x 125 cells at four flight levels.
+
+| Flight level (m) | Free cells (%) | Site-cell pairs in line of sight, free cells (%) | Site-cell pairs in line of sight, all cells (%) |
+|---|---|---|---|
+| 10 | 60.9 | 50.5 | 31.9 |
+| 20 | 79.2 | 62.6 | 54.2 |
+| 30 | 98.7 | 78.0 | 77.4 |
+| 40 | 99.3 | 82.4 | 81.9 |
+
+At the user height of 1.5 m, 30.1% of the site-cell pairs are in line of sight; 94.5% of those are unblocked in the path-gain database, and 86.9% of the unblocked database entries are in line of sight (the others are reached by reflections only).  Roofs: 32.4% of the area is built, median height 17.9 m, 90th percentile 24.6 m, maximum 50 m.
+
+Check of the simulator's path-gain database (`e8_database_check.json`): the radio maps traced again with Sionna RT 2.2.0 and compared with the stored database (blocked mask at -110 dB; errors over the cells unblocked in both).
+
+| `max_depth` | Radio maps compared | Identical blocked mask | Mean mask agreement | Smallest mask agreement | Mean absolute error (dB) | Largest absolute error (dB) |
+|---|---|---|---|---|---|---|
+| 3 | 847 | 716 | 0.99999 | 0.99898 | 0.0009 | 2.38 |
+| 4 | 60 | 0 | 0.99881 | 0.99603 | 0.1015 | 3.34 |
+
+Placement with free-space sensing (the model of E1-E7) versus blockage-aware sensing, both evaluated on the blockage-aware utility; best response with restarts, 20 scenarios, lam = 0.5.  Target points: the simulator's 32 trajectory points (28 of them in free cells, each seen by at least 158 valid sites) or 64 planning points on free cells.  PEB: Bayesian position error bound over the target points.
+
+| Target points | N | Utility lost (%) | Sensing value lost (%) | Gap, rate part | Gap, sensing part | PEB median (m), aware / free-space | PEB 90th percentile (m), aware / free-space | Points no selected AP sees (%), aware / free-space | Sites shared (%) |
+|---|---|---|---|---|---|---|---|---|---|
+| Trajectory | 4 | 5.72 [4.43, 7.01] | 21.8 [17.1, 26.5] | -0.0200 [-0.0257, -0.0143] | 0.0528 [0.0418, 0.0638] | 5.78 / 50.68 | 73.4 / 144.5 | 0.0 / 4.5 | 38 [31, 44] |
+| Trajectory | 8 | 1.13 [0.75, 1.51] | 5.3 [4.0, 6.6] | -0.0089 [-0.0115, -0.0062] | 0.0167 [0.0126, 0.0208] | 1.09 / 1.25 | 9.7 / 56.1 | 0.0 / 0.0 | 64 [56, 71] |
+| Trajectory | 16 | 0.38 [0.27, 0.49] | 1.9 [1.5, 2.4] | -0.0041 [-0.0052, -0.0031] | 0.0071 [0.0055, 0.0087] | 0.33 / 0.35 | 2.9 / 5.0 | 0.0 / 0.0 | 76 [72, 80] |
+| Planning | 4 | 3.67 [2.59, 4.75] | 17.6 [13.5, 21.8] | -0.0136 [-0.0184, -0.0087] | 0.0329 [0.0253, 0.0406] | 38.95 / 92.44 | 130.2 / 147.6 | 4.8 / 8.1 | 49 [39, 58] |
+| Planning | 8 | 1.83 [1.53, 2.13] | 9.1 [7.7, 10.5] | -0.0115 [-0.0142, -0.0088] | 0.0231 [0.0194, 0.0268] | 5.83 / 9.13 | 90.2 / 121.8 | 2.3 / 4.3 | 61 [55, 67] |
+| Planning | 16 | 1.17 [0.94, 1.40] | 5.1 [4.2, 6.1] | -0.0077 [-0.0094, -0.0060] | 0.0163 [0.0132, 0.0193] | 1.32 / 1.81 | 18.3 / 47.0 | 1.2 / 2.1 | 68 [64, 73] |
+
+Full statistics of both placements (blockage-aware utility):
+
+| Target points | N | Sensing model of the placement | Utility | Sum rate (bit/s/Hz) | Sensing value (nats) | PEB median (m) | PEB 90th percentile (m) | Points no selected AP sees (%) | Points one selected AP sees (%) | Gain over a random placement kept (%) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Trajectory | 4 | Blockage-aware | 0.5740 [0.5671, 0.5810] | 112.9 [109.0, 116.8] | 26.67 [26.17, 27.16] | 5.78 [5.02, 6.54] | 73.4 [59.9, 86.9] | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 100 [100, 100] |
+| Trajectory | 4 | Free space | 0.5413 [0.5310, 0.5516] | 119.7 [115.3, 124.2] | 20.90 [19.46, 22.34] | 50.68 [32.59, 68.77] | 144.5 [134.3, 154.7] | 4.5 [1.4, 7.7] | 12.7 [10.0, 15.4] | 86 [82, 89] |
+| Trajectory | 8 | Blockage-aware | 0.6950 [0.6886, 0.7014] | 129.5 [125.8, 133.2] | 34.58 [34.35, 34.81] | 1.09 [0.98, 1.19] | 9.7 [8.0, 11.5] | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 100 [100, 100] |
+| Trajectory | 8 | Free space | 0.6872 [0.6797, 0.6947] | 132.5 [128.7, 136.3] | 32.76 [32.27, 33.24] | 1.25 [1.13, 1.38] | 56.1 [38.5, 73.6] | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 97 [95, 98] |
+| Trajectory | 16 | Blockage-aware | 0.7875 [0.7829, 0.7921] | 142.8 [139.0, 146.5] | 40.45 [40.30, 40.60] | 0.33 [0.31, 0.35] | 2.9 [2.7, 3.1] | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 100 [100, 100] |
+| Trajectory | 16 | Free space | 0.7845 [0.7796, 0.7895] | 144.2 [140.4, 147.9] | 39.67 [39.44, 39.90] | 0.35 [0.32, 0.38] | 5.0 [4.2, 5.7] | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 99 [98, 99] |
+| Planning | 4 | Blockage-aware | 0.5275 [0.5201, 0.5349] | 116.8 [112.8, 120.8] | 19.57 [18.75, 20.39] | 38.95 [28.19, 49.71] | 130.2 [121.3, 139.1] | 4.8 [3.5, 6.2] | 8.1 [6.1, 10.1] | 100 [100, 100] |
+| Planning | 4 | Free space | 0.5081 [0.4993, 0.5170] | 121.4 [117.5, 125.4] | 16.09 [15.16, 17.03] | 92.44 [79.88, 105.01] | 147.6 [141.9, 153.3] | 8.1 [6.8, 9.5] | 20.4 [15.0, 25.8] | 90 [87, 93] |
+| Planning | 8 | Blockage-aware | 0.6341 [0.6275, 0.6406] | 130.3 [126.6, 134.0] | 26.61 [26.01, 27.21] | 5.83 [4.49, 7.16] | 90.2 [82.1, 98.2] | 2.3 [1.5, 3.0] | 2.3 [1.7, 3.0] | 100 [100, 100] |
+| Planning | 8 | Free space | 0.6225 [0.6157, 0.6292] | 134.3 [130.6, 137.9] | 24.18 [23.58, 24.79] | 9.13 [7.54, 10.72] | 121.8 [113.1, 130.5] | 4.3 [3.0, 5.5] | 5.8 [4.4, 7.2] | 94 [93, 95] |
+| Planning | 16 | Blockage-aware | 0.7308 [0.7256, 0.7359] | 141.4 [137.7, 145.0] | 33.38 [32.91, 33.85] | 1.32 [1.10, 1.55] | 18.3 [14.0, 22.6] | 1.2 [0.6, 1.7] | 1.2 [0.6, 1.9] | 100 [100, 100] |
+| Planning | 16 | Free space | 0.7222 [0.7168, 0.7277] | 144.0 [140.3, 147.7] | 31.68 [31.11, 32.24] | 1.81 [1.51, 2.12] | 47.0 [34.2, 59.9] | 2.1 [1.4, 2.8] | 2.2 [1.4, 3.0] | 95 [94, 96] |
+
+0.6 [0.1, 1.1]% of the planning points are seen by no valid site at all.
+
+Structure of the blockage-aware objective with the estimators and the sampled sets of E1 (eps = 0.0001, 10 scenarios, 10000 samples per statistic and scenario); the free-space rows repeat E1:
+
+| Set function | Sensing model, target points | Violating triples (%) | Submodularity ratio | Diminishing-return ratio | Curvature | Implied greedy factor | Implied equilibrium factor |
+|---|---|---|---|---|---|---|---|
+| Sensing, joint roles `L` | Free space, trajectory points (E1) | 0.79 [0.73, 0.85] | 0.903 | 0.722 | 0.980 | 0.599 | 0.320 |
+| Sensing, joint roles `L` | Blockage-aware, trajectory points | 1.16 [1.08, 1.24] | 0.919 | 0.729 | 0.993 | 0.603 | 0.328 |
+| Sensing, joint roles `L` | Blockage-aware, planning points | 0.81 [0.76, 0.87] | 0.927 | 0.802 | 0.967 | 0.612 | 0.374 |
+| Team utility `U` (lam = 0.5) | Free space, trajectory points (E1) | 0.30 [0.22, 0.38] | 0.937 | 0.803 | 0.981 | 0.613 | 0.377 |
+| Team utility `U` (lam = 0.5) | Blockage-aware, trajectory points | 0.37 [0.28, 0.47] | 0.949 | 0.689 | 0.993 | 0.615 | 0.310 |
+| Team utility `U` (lam = 0.5) | Blockage-aware, planning points | 0.30 [0.23, 0.38] | 0.954 | 0.874 | 0.968 | 0.623 | 0.422 |
+| Sensing, split roles (transmit set, receive set fixed) | Free space, trajectory points (E1) | 0.00 [0.00, 0.00] | 1.007 | 1.009 | 0.995 | 0.633 | 0.500 |
+| Sensing, split roles (transmit set, receive set fixed) | Blockage-aware, trajectory points | 0.00 [0.00, 0.00] | 1.000 | 1.000 | 0.998 | 0.633 | 0.500 |
+| Sensing, split roles (transmit set, receive set fixed) | Blockage-aware, planning points | 0.00 [0.00, 0.00] | 1.000 | 1.001 | 0.990 | 0.635 | 0.500 |
+
+## E9 equilibria of the mode game (`e9_mode_equilibria.json`)
+
+Static snapshots of planned deployments with D in [8, 10, 12] APs (20 scenarios each, 60 instances), 15 users, 4 UAVs; all 3^D mode profiles enumerated.  Costs: c_tx = 0.016, c_rx = 0.008 or none.  Budgets {'8': 480, '10': 600, '12': 720} evaluations (D: budget); 3 repetitions of the randomised methods.  Entries: mean [95% interval] over instances of the ratio to the optimum, and the smallest ratio of any instance or run.
+
+| Utility / optimum, with energy cost | lam = 0.5 (team utility) | lam = 0 (sensing only) | lam = 1 (sum rate only) |
+|---|---|---|---|
+| Worst Nash equilibrium | 0.9676 [0.9590, 0.9762], min 0.8613 | 0.0000 [0.0000, 0.0000], min 0.0000 | 1.0000 [0.9999, 1.0000], min 0.9988 |
+| Mean over all Nash equilibria | 0.9842 [0.9799, 0.9885] | 0.8818 [0.8686, 0.8951] | 1.0000 [1.0000, 1.0000] |
+| Worst pair-stable profile | 0.9980 [0.9968, 0.9991], min 0.9797 | 0.9882 [0.9861, 0.9903], min 0.9600 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Best response, one run (random start) | 0.9928 [0.9906, 0.9951], min 0.8959 | 0.9868 [0.9846, 0.9891], min 0.9219 | 1.0000 [0.9999, 1.0000], min 0.9988 |
+| Best response, one run (all-off start) | 0.9944 [0.9919, 0.9968], min 0.9461 | 0.0000 [0.0000, 0.0000], min 0.0000 | 1.0000 [0.9999, 1.0000], min 0.9988 |
+| Best response (restarts) | 0.9997 [0.9995, 0.9999], min 0.9893 | 0.9988 [0.9983, 0.9993], min 0.9857 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Best response with pair moves, one run (all-off start) | 0.9991 [0.9984, 0.9998], min 0.9836 | 0.9968 [0.9955, 0.9981], min 0.9795 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Best response with pair moves (restarts) | 0.9998 [0.9996, 0.9999], min 0.9907 | 0.9977 [0.9967, 0.9986], min 0.9654 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Log-linear learning, then best response (all-off start) | 0.9960 [0.9945, 0.9974], min 0.9475 | 0.9909 [0.9889, 0.9930], min 0.9471 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Greedy (all-off start) | 0.9971 [0.9955, 0.9987], min 0.9622 | 0.0000 [0.0000, 0.0000], min 0.0000 | 1.0000 [1.0000, 1.0000], min 0.9995 |
+| Simulated annealing | 0.9978 [0.9965, 0.9992], min 0.9532 | 0.9944 [0.9931, 0.9958], min 0.9623 | 1.0000 [1.0000, 1.0000], min 0.9997 |
+| Random search | 0.9742 [0.9714, 0.9770], min 0.9315 | 0.9751 [0.9721, 0.9780], min 0.9314 | 0.9758 [0.9728, 0.9787], min 0.9273 |
+
+| Utility / optimum, without energy cost | lam = 0.5 (team utility) | lam = 0 (sensing only) | lam = 1 (sum rate only) |
+|---|---|---|---|
+| Worst Nash equilibrium | 0.9705 [0.9622, 0.9788], min 0.8301 | 0.0000 [0.0000, 0.0000], min 0.0000 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Mean over all Nash equilibria | 0.9858 [0.9819, 0.9898] | 0.8922 [0.8787, 0.9057] | 1.0000 [1.0000, 1.0000] |
+| Worst pair-stable profile | 0.9983 [0.9967, 1.0000], min 0.9540 | 0.9981 [0.9974, 0.9987], min 0.9904 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Best response, one run (random start) | 0.9925 [0.9899, 0.9951], min 0.8301 | 0.9939 [0.9926, 0.9952], min 0.9671 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Best response, one run (all-off start) | 0.9948 [0.9927, 0.9969], min 0.9546 | 0.0000 [0.0000, 0.0000], min 0.0000 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Best response (restarts) | 0.9998 [0.9996, 0.9999], min 0.9912 | 0.9996 [0.9994, 0.9998], min 0.9923 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Best response with pair moves, one run (all-off start) | 0.9995 [0.9990, 1.0000], min 0.9903 | 0.9993 [0.9988, 0.9997], min 0.9919 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Best response with pair moves (restarts) | 0.9998 [0.9996, 1.0000], min 0.9927 | 0.9996 [0.9993, 0.9998], min 0.9904 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Log-linear learning, then best response (all-off start) | 0.9975 [0.9966, 0.9984], min 0.9546 | 0.9958 [0.9946, 0.9970], min 0.9695 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Greedy (all-off start) | 0.9978 [0.9969, 0.9988], min 0.9852 | 0.0000 [0.0000, 0.0000], min 0.0000 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Simulated annealing | 0.9992 [0.9987, 0.9998], min 0.9681 | 0.9984 [0.9977, 0.9992], min 0.9767 | 1.0000 [1.0000, 1.0000], min 0.9997 |
+| Random search | 0.9698 [0.9669, 0.9728], min 0.9225 | 0.9870 [0.9854, 0.9886], min 0.9497 | 0.9834 [0.9809, 0.9859], min 0.9411 |
+
+Equilibria of the game (mean [95% interval] over instances).  A profile is *without a pair* if no target has a transmitter and a receiver in line of sight:
+
+| lam | Costs | Active APs at the optimum | Nash equilibria | Pair-stable profiles | Instances with an equilibrium without a pair (%) | Equilibria without a pair (%) | Pair-stable profiles without a pair (%) | Best response from all-off ends without a pair (%) | Greedy ends without a pair (%) | Best response with pair moves from all-off ends without a pair (%) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0.5 | with energy cost | 8.85 [8.54, 9.16] | 4.10 [3.52, 4.68] | 1.33 [1.19, 1.48] | 0 [0, 0] | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 0 | 0 | 0 |
+| 0.5 | without energy cost | 9.95 [9.53, 10.37] | 4.37 [3.45, 5.29] | 1.32 [1.16, 1.47] | 0 [0, 0] | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 0 | 0 | 0 |
+| 0 | with energy cost | 8.08 [7.74, 8.43] | 13.35 [11.16, 15.54] | 2.83 [2.60, 3.06] | 100 [100, 100] | 10.1 [8.8, 11.5] | 0.0 [0.0, 0.0] | 100 | 100 | 0 |
+| 0 | without energy cost | 9.48 [9.05, 9.92] | 27.63 [21.81, 33.46] | 7.57 [5.51, 9.62] | 100 [100, 100] | 10.0 [8.6, 11.3] | 0.0 [0.0, 0.0] | 100 | 100 | 0 |
+| 1 | with energy cost | 5.53 [5.30, 5.77] | 1.07 [1.00, 1.13] | 1.00 [1.00, 1.00] | - | - | - | - | - | - |
+| 1 | without energy cost | 9.42 [9.02, 9.82] | 2.57 [1.96, 3.18] | 2.57 [1.96, 3.18] | - | - | - | - | - | - |
+
+Evaluations used (mean over instances and repetitions) and share of runs at the optimum, lam = 0.5, with energy cost:
+
+| Method | Evaluations | Runs at the optimum (%) |
+|---|---|---|
+| Best response, one run (random start) | 81 | 51 |
+| Best response, one run (all-off start) | 85 | 47 |
+| Best response (restarts) | 600 | 91 |
+| Best response with pair moves, one run (all-off start) | 333 | 87 |
+| Best response with pair moves (restarts) | 599 | 92 |
+| Log-linear learning, then best response (all-off start) | 336 | 56 |
+| Greedy (all-off start) | 207 | 62 |
+| Simulated annealing | 600 | 74 |
+| Random search | 600 | 3 |
+
+By the size of the deployment:
+
+| lam | Costs |  | D = 8 | D = 10 | D = 12 |
+|---|---|---|---|---|---|
+| 0.5 | with energy cost | Worst Nash equilibrium | 0.9639 [0.9450, 0.9828] | 0.9647 [0.9472, 0.9821] | 0.9744 [0.9656, 0.9831] |
+| 0.5 | with energy cost | Worst pair-stable profile | 0.9986 [0.9964, 1.0007] | 0.9973 [0.9948, 0.9998] | 0.9981 [0.9967, 0.9996] |
+| 0.5 | with energy cost | Number of Nash equilibria | 3.10 [2.51, 3.69] | 3.50 [2.73, 4.27] | 5.70 [4.44, 6.96] |
+| 0.5 | without energy cost | Worst Nash equilibrium | 0.9574 [0.9368, 0.9781] | 0.9760 [0.9637, 0.9883] | 0.9781 [0.9701, 0.9861] |
+| 0.5 | without energy cost | Worst pair-stable profile | 0.9965 [0.9916, 1.0014] | 0.9990 [0.9979, 1.0001] | 0.9995 [0.9988, 1.0002] |
+| 0.5 | without energy cost | Number of Nash equilibria | 3.00 [2.45, 3.55] | 4.00 [3.17, 4.83] | 6.10 [3.56, 8.64] |
+| 0 | with energy cost | Worst Nash equilibrium | 0.0000 [0.0000, 0.0000] | 0.0000 [0.0000, 0.0000] | 0.0000 [0.0000, 0.0000] |
+| 0 | with energy cost | Worst pair-stable profile | 0.9883 [0.9851, 0.9916] | 0.9883 [0.9842, 0.9925] | 0.9880 [0.9839, 0.9921] |
+| 0 | with energy cost | Number of Nash equilibria | 8.50 [6.87, 10.13] | 11.75 [9.32, 14.18] | 19.80 [14.83, 24.77] |
+| 0 | without energy cost | Worst Nash equilibrium | 0.0000 [0.0000, 0.0000] | 0.0000 [0.0000, 0.0000] | 0.0000 [0.0000, 0.0000] |
+| 0 | without energy cost | Worst pair-stable profile | 0.9980 [0.9964, 0.9996] | 0.9981 [0.9970, 0.9992] | 0.9982 [0.9972, 0.9991] |
+| 0 | without energy cost | Number of Nash equilibria | 16.50 [9.47, 23.53] | 24.20 [18.03, 30.37] | 42.20 [28.85, 55.55] |
+| 1 | with energy cost | Worst Nash equilibrium | 1.0000 [0.9999, 1.0000] | 0.9999 [0.9998, 1.0000] | 1.0000 [1.0000, 1.0000] |
+| 1 | with energy cost | Worst pair-stable profile | 1.0000 [1.0000, 1.0000] | 1.0000 [1.0000, 1.0000] | 1.0000 [1.0000, 1.0000] |
+| 1 | with energy cost | Number of Nash equilibria | 1.05 [0.95, 1.15] | 1.10 [0.96, 1.24] | 1.05 [0.95, 1.15] |
+| 1 | without energy cost | Worst Nash equilibrium | 1.0000 [1.0000, 1.0000] | 1.0000 [1.0000, 1.0000] | 1.0000 [1.0000, 1.0000] |
+| 1 | without energy cost | Worst pair-stable profile | 1.0000 [1.0000, 1.0000] | 1.0000 [1.0000, 1.0000] | 1.0000 [1.0000, 1.0000] |
+| 1 | without energy cost | Number of Nash equilibria | 1.80 [0.92, 2.68] | 2.60 [1.48, 3.72] | 3.30 [2.07, 4.53] |
+
+Sensitivity to the energy cost (D = 24 APs, snapshots at slots [0, 60, 120, 180] of the 20 scenarios; reference solver; the last column is one best-response run from all-off relative to the reference):
+
+| c_tx / c_rx | Active APs | Transmitters | Receivers | Utility | Sum rate (bit/s/Hz) | PEB, median of the targets (m) | Best response from all-off / reference |
+|---|---|---|---|---|---|---|---|
+| 0 / 0 | 23.9 [23.9, 24.0] | 16.6 [16.1, 17.1] | 7.3 [6.9, 7.8] | 0.952 [0.943, 0.960] | 140.0 [136.4, 143.7] | 1.86 [1.01, 2.71] | 0.9977 [0.9969, 0.9984] |
+| 0.004 / 0.002 | 20.0 [19.4, 20.6] | 12.9 [12.3, 13.4] | 7.2 [6.8, 7.5] | 0.878 [0.870, 0.887] | 138.9 [135.4, 142.4] | 2.02 [0.99, 3.05] | 0.9977 [0.9970, 0.9984] |
+| 0.008 / 0.004 | 16.1 [15.6, 16.6] | 10.1 [9.7, 10.4] | 6.0 [5.8, 6.3] | 0.819 [0.810, 0.828] | 135.8 [132.6, 139.1] | 2.40 [1.11, 3.68] | 0.9971 [0.9961, 0.9981] |
+| 0.016 / 0.008 | 11.6 [11.4, 11.8] | 6.8 [6.6, 7.1] | 4.7 [4.5, 5.0] | 0.733 [0.723, 0.742] | 129.4 [125.9, 132.9] | 3.11 [1.74, 4.49] | 0.9957 [0.9947, 0.9966] |
+| 0.032 / 0.016 | 8.1 [7.9, 8.3] | 4.5 [4.4, 4.7] | 3.6 [3.4, 3.7] | 0.613 [0.603, 0.624] | 120.7 [117.1, 124.4] | 4.98 [3.37, 6.58] | 0.9882 [0.9854, 0.9910] |
+| 0.064 / 0.032 | 5.6 [5.4, 5.8] | 3.0 [2.9, 3.2] | 2.5 [2.4, 2.7] | 0.446 [0.434, 0.459] | 109.8 [106.5, 113.0] | 13.95 [9.72, 18.17] | 0.9555 [0.9442, 0.9667] |
+
+## E10 online tracking (`e10_online_tracking.json`)
+
+D = 24 APs (planned deployment), 15 users, 4 UAVs (one per flight level), 240 slots of 0.5 s, 20 scenarios; c_tx = 0.016, c_rx = 0.008.  All controllers start from the reference solution of slot 0.  'Best known' is, per slot, the best utility of any controller.  The tracking gain captured is 0% for the static assignment and 100% for the best known.  A delay of d slots applies the solution computed for slot t - d at slot t.  Messages: a distributed AP tells every neighbour in the interaction graph when it changes mode; a central controller sends one command per AP whose mode changes.
+
+Compact view, speed 10 m/s (the interaction graph needs 23.1 colours on average; 'until equilibrium' takes 31.6 sub-rounds per slot):
+
+| Controller | Utility / best known | Tracking gain captured (%) | PEB median (m) | PEB 90th percentile (m) | Target-slots without a pair (%) | Sum rate (bit/s/Hz) | Active APs | Mode switches per slot | Evaluations per slot | Messages per slot |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Reference (best response with pair moves, restarts, no delay) | 1.0000 [1.0000, 1.0000] | 100.0 [100.0, 100.0] | 1.59 [1.38, 1.80] | 8.1 [6.5, 9.7] | 0.04 [0.00, 0.09] | 129.4 [126.1, 132.7] | 11.6 | 1.42 | 8724 | 1.4 |
+| Distributed, 1 sub-round per slot | 0.9644 [0.9618, 0.9670] | 58.2 [53.3, 63.1] | 1.98 [1.69, 2.27] | 12.3 [10.0, 14.6] | 0.08 [0.01, 0.15] | 129.2 [125.9, 132.5] | 12.7 | 0.26 | 3 | 5.9 |
+| Distributed, 2 sub-rounds per slot | 0.9790 [0.9773, 0.9808] | 75.2 [71.7, 78.7] | 1.79 [1.56, 2.03] | 10.3 [8.4, 12.2] | 0.11 [0.01, 0.21] | 129.3 [125.9, 132.7] | 12.3 | 0.39 | 6 | 8.8 |
+| Distributed, 8 sub-rounds per slot | 0.9927 [0.9917, 0.9937] | 91.5 [90.2, 92.8] | 1.66 [1.43, 1.88] | 8.7 [7.0, 10.5] | 0.04 [0.00, 0.10] | 129.3 [126.0, 132.6] | 11.8 | 0.63 | 25 | 14.3 |
+| Distributed, until equilibrium | 0.9962 [0.9957, 0.9967] | 95.6 [94.9, 96.3] | 1.62 [1.41, 1.84] | 8.4 [6.7, 10.1] | 0.04 [0.00, 0.09] | 129.3 [126.0, 132.5] | 11.7 | 0.80 | 98 | 19.7 |
+| Distributed, pair moves, until pair-stable | 0.9994 [0.9993, 0.9996] | 99.4 [99.2, 99.5] | 1.59 [1.38, 1.81] | 8.2 [6.6, 9.8] | 0.04 [0.00, 0.09] | 129.4 [126.0, 132.7] | 11.6 | 1.16 | 1423 | 684.3 |
+| Central annealing, full budget, delay 0 | 0.9967 [0.9962, 0.9972] | 96.2 [95.6, 96.7] | 1.62 [1.41, 1.83] | 8.3 [6.7, 9.9] | 0.04 [0.00, 0.09] | 129.3 [126.0, 132.6] | 11.7 | 1.03 | 98 | 1.0 |
+| Central annealing, full budget, delay 1 | 0.9945 [0.9939, 0.9951] | 93.6 [92.7, 94.5] | 1.65 [1.43, 1.86] | 8.7 [7.1, 10.4] | 0.05 [0.00, 0.11] | 129.3 [126.0, 132.6] | 11.7 | 1.03 | 98 | 1.0 |
+| Central annealing, full budget, delay 2 | 0.9923 [0.9915, 0.9932] | 91.0 [89.7, 92.3] | 1.69 [1.47, 1.90] | 9.2 [7.4, 10.9] | 0.08 [0.00, 0.18] | 129.3 [126.0, 132.6] | 11.7 | 1.02 | 98 | 1.0 |
+| Central annealing, full budget, delay 4 | 0.9878 [0.9867, 0.9889] | 85.6 [83.6, 87.6] | 1.77 [1.55, 1.99] | 10.0 [8.1, 11.9] | 0.13 [0.00, 0.27] | 129.3 [126.0, 132.6] | 11.7 | 1.02 | 98 | 1.0 |
+| Central annealing, full budget, delay 8 | 0.9779 [0.9763, 0.9794] | 73.9 [70.4, 77.3] | 1.98 [1.74, 2.22] | 12.4 [10.2, 14.5] | 0.21 [0.07, 0.36] | 129.3 [126.0, 132.6] | 11.7 | 1.00 | 98 | 1.0 |
+| Central greedy from scratch, delay 0 | 0.9960 [0.9955, 0.9965] | 95.3 [94.4, 96.2] | 1.66 [1.43, 1.88] | 8.5 [6.8, 10.2] | 0.19 [0.00, 0.39] | 129.1 [125.8, 132.3] | 11.5 | 2.11 | 649 | 2.1 |
+| Periodic re-optimisation (reference solver) | 0.9753 [0.9732, 0.9775] | 70.7 [66.3, 75.2] | 2.08 [1.80, 2.35] | 13.0 [10.9, 15.1] | 0.08 [0.00, 0.16] | 129.4 [126.1, 132.7] | 11.6 | 0.34 | 404 | 0.3 |
+| Static assignment (optimised at slot 0) | 0.9091 [0.8962, 0.9221] | 0.0 [0.0, 0.0] | 4.06 [3.16, 4.95] | 40.4 [29.2, 51.7] | 0.82 [0.19, 1.45] | 129.0 [125.4, 132.7] | 11.7 | 0.00 | 0 | 0.0 |
+
+Utility / best known against the decision delay of the central controller (annealing with the evaluation budget of the converged distributed controller):
+
+| Speed (m/s) | Distributed, until equilibrium | Central, delay 0 | Central, delay 1 | Central, delay 2 | Central, delay 4 | Central, delay 8 | Static |
+|---|---|---|---|---|---|---|---|
+| 5 | 0.9963 [0.9956, 0.9970] | 0.9970 [0.9965, 0.9975] | 0.9957 [0.9951, 0.9963] | 0.9946 [0.9938, 0.9953] | 0.9922 [0.9912, 0.9933] | 0.9875 [0.9860, 0.9891] | 0.9127 [0.8987, 0.9267] |
+| 10 | 0.9962 [0.9957, 0.9967] | 0.9967 [0.9962, 0.9972] | 0.9945 [0.9939, 0.9951] | 0.9923 [0.9915, 0.9932] | 0.9878 [0.9867, 0.9889] | 0.9779 [0.9763, 0.9794] | 0.9091 [0.8962, 0.9221] |
+| 20 | 0.9963 [0.9957, 0.9969] | 0.9960 [0.9956, 0.9965] | 0.9918 [0.9913, 0.9923] | 0.9872 [0.9865, 0.9879] | 0.9772 [0.9761, 0.9783] | 0.9564 [0.9543, 0.9584] | 0.9072 [0.8976, 0.9168] |
+| 40 | 0.9959 [0.9954, 0.9965] | 0.9954 [0.9950, 0.9957] | 0.9870 [0.9864, 0.9875] | 0.9771 [0.9763, 0.9779] | 0.9565 [0.9550, 0.9579] | 0.9302 [0.9280, 0.9323] | 0.9045 [0.8948, 0.9143] |
+
+Distributed controllers with a limited number of sub-rounds per slot (utility / best known):
+
+| Speed (m/s) | 1 sub-round per slot | 2 sub-rounds per slot | 8 sub-rounds per slot | until equilibrium | Clusters of 4, 1 sub-round per slot | Clusters of 4, 2 sub-rounds per slot | Clusters of 4, until equilibrium | Clusters of 8, 1 sub-round per slot | Clusters of 8, 2 sub-rounds per slot | Clusters of 8, until equilibrium |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 5 | 0.9782 [0.9759, 0.9804] | 0.9873 [0.9856, 0.9889] | 0.9941 [0.9931, 0.9951] | 0.9963 [0.9956, 0.9970] | 0.9705 [0.9671, 0.9738] | 0.9713 [0.9679, 0.9747] | 0.9724 [0.9689, 0.9760] | 0.9817 [0.9800, 0.9835] | 0.9866 [0.9852, 0.9880] | 0.9906 [0.9898, 0.9913] |
+| 10 | 0.9644 [0.9618, 0.9670] | 0.9790 [0.9773, 0.9808] | 0.9927 [0.9917, 0.9937] | 0.9962 [0.9957, 0.9967] | 0.9678 [0.9655, 0.9700] | 0.9697 [0.9677, 0.9718] | 0.9727 [0.9705, 0.9749] | 0.9742 [0.9719, 0.9765] | 0.9828 [0.9816, 0.9839] | 0.9907 [0.9897, 0.9916] |
+| 20 | 0.9472 [0.9432, 0.9512] | 0.9661 [0.9642, 0.9679] | 0.9897 [0.9889, 0.9905] | 0.9963 [0.9957, 0.9969] | 0.9631 [0.9609, 0.9652] | 0.9685 [0.9669, 0.9700] | 0.9712 [0.9693, 0.9731] | 0.9607 [0.9585, 0.9628] | 0.9752 [0.9733, 0.9771] | 0.9898 [0.9889, 0.9906] |
+| 40 | 0.9364 [0.9332, 0.9395] | 0.9500 [0.9478, 0.9521] | 0.9839 [0.9830, 0.9848] | 0.9959 [0.9954, 0.9965] | 0.9532 [0.9501, 0.9562] | 0.9653 [0.9632, 0.9674] | 0.9718 [0.9700, 0.9736] | 0.9475 [0.9447, 0.9502] | 0.9624 [0.9608, 0.9639] | 0.9900 [0.9892, 0.9907] |
+
+Decision delay at which central annealing falls behind a distributed controller (paired differences of the utility ratio over the scenarios; 'behind' and 'ahead' mean that the 95% interval of the difference excludes 0; delays tested: [0, 1, 2, 4, 8] slots).  Matched budget: the annealing gets the evaluations per slot of that distributed controller.  Full budget: it gets those of the converged distributed controller:
+
+| Speed (m/s) | Distributed controller | Matched budget: first delay behind | Full budget: first delay behind | Full budget: largest delay still ahead |
+|---|---|---|---|---|
+| 5 | Distributed, 1 sub-round per slot | 0 | not up to 8 | 8 |
+| 5 | Distributed, 2 sub-rounds per slot | 0 | not up to 8 | 4 |
+| 5 | Distributed, 8 sub-rounds per slot | 1 | 4 | 1 |
+| 5 | Distributed, until equilibrium | 1 | 1 | 0 |
+| 5 | Distributed on clusters of 4, 1 sub-round per slot | - | not up to 8 | 8 |
+| 5 | Distributed on clusters of 4, 2 sub-rounds per slot | - | not up to 8 | 8 |
+| 5 | Distributed on clusters of 4, until equilibrium | - | not up to 8 | 8 |
+| 5 | Distributed on clusters of 8, 1 sub-round per slot | - | not up to 8 | 8 |
+| 5 | Distributed on clusters of 8, 2 sub-rounds per slot | - | not up to 8 | 4 |
+| 5 | Distributed on clusters of 8, until equilibrium | - | 8 | 4 |
+| 10 | Distributed, 1 sub-round per slot | 2 | not up to 8 | 8 |
+| 10 | Distributed, 2 sub-rounds per slot | 1 | not up to 8 | 4 |
+| 10 | Distributed, 8 sub-rounds per slot | 1 | 4 | 1 |
+| 10 | Distributed, until equilibrium | 1 | 1 | at no delay |
+| 10 | Distributed on clusters of 4, 1 sub-round per slot | - | not up to 8 | 8 |
+| 10 | Distributed on clusters of 4, 2 sub-rounds per slot | - | not up to 8 | 8 |
+| 10 | Distributed on clusters of 4, until equilibrium | - | not up to 8 | 8 |
+| 10 | Distributed on clusters of 8, 1 sub-round per slot | - | not up to 8 | 8 |
+| 10 | Distributed on clusters of 8, 2 sub-rounds per slot | - | 8 | 4 |
+| 10 | Distributed on clusters of 8, until equilibrium | - | 4 | 2 |
+| 20 | Distributed, 1 sub-round per slot | 2 | not up to 8 | 8 |
+| 20 | Distributed, 2 sub-rounds per slot | 1 | 8 | 4 |
+| 20 | Distributed, 8 sub-rounds per slot | 0 | 2 | 1 |
+| 20 | Distributed, until equilibrium | 1 | 1 | at no delay |
+| 20 | Distributed on clusters of 4, 1 sub-round per slot | - | 8 | 4 |
+| 20 | Distributed on clusters of 4, 2 sub-rounds per slot | - | 8 | 4 |
+| 20 | Distributed on clusters of 4, until equilibrium | - | 8 | 4 |
+| 20 | Distributed on clusters of 8, 1 sub-round per slot | - | 8 | 4 |
+| 20 | Distributed on clusters of 8, 2 sub-rounds per slot | - | 8 | 4 |
+| 20 | Distributed on clusters of 8, until equilibrium | - | 2 | 1 |
+| 40 | Distributed, 1 sub-round per slot | 2 | 8 | 4 |
+| 40 | Distributed, 2 sub-rounds per slot | 2 | 8 | 4 |
+| 40 | Distributed, 8 sub-rounds per slot | 1 | 2 | 1 |
+| 40 | Distributed, until equilibrium | 0 | 0 | at no delay |
+| 40 | Distributed on clusters of 4, 1 sub-round per slot | - | 8 | 4 |
+| 40 | Distributed on clusters of 4, 2 sub-rounds per slot | - | 4 | 2 |
+| 40 | Distributed on clusters of 4, until equilibrium | - | 4 | 2 |
+| 40 | Distributed on clusters of 8, 1 sub-round per slot | - | 8 | 4 |
+| 40 | Distributed on clusters of 8, 2 sub-rounds per slot | - | 4 | 2 |
+| 40 | Distributed on clusters of 8, until equilibrium | - | 1 | 0 |
+
+All controllers, speed 5 m/s (23.0 colours, 74.6% of the AP-target pairs in line of sight, reference solver 8579 evaluations per slot):
+
+| Controller | Utility / best known | Tracking gain captured (%) | PEB median (m) | PEB 90th percentile (m) | Target-slots without a pair (%) | Sum rate (bit/s/Hz) | Active APs | Mode switches per slot | Evaluations per slot | Messages per slot |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Reference (best response with pair moves, restarts, no delay) | 1.0000 [1.0000, 1.0000] | 100.0 [100.0, 100.0] | 1.73 [1.42, 2.03] | 10.1 [7.7, 12.5] | 0.06 [0.00, 0.16] | 129.4 [126.1, 132.7] | 11.6 | 0.91 | 8584 | 0.9 |
+| Distributed, 1 sub-round per slot | 0.9782 [0.9759, 0.9804] | 72.7 [68.2, 77.2] | 1.99 [1.66, 2.33] | 13.2 [9.3, 17.2] | 0.12 [0.00, 0.28] | 129.2 [125.9, 132.5] | 12.2 | 0.19 | 3 | 4.2 |
+| Distributed, 2 sub-rounds per slot | 0.9873 [0.9856, 0.9889] | 84.4 [81.9, 86.9] | 1.88 [1.55, 2.21] | 12.0 [8.5, 15.5] | 0.10 [0.00, 0.23] | 129.3 [126.0, 132.6] | 11.9 | 0.25 | 6 | 5.7 |
+| Distributed, 8 sub-rounds per slot | 0.9941 [0.9931, 0.9951] | 92.6 [91.0, 94.2] | 1.78 [1.48, 2.07] | 10.5 [7.9, 13.0] | 0.07 [0.00, 0.19] | 129.3 [126.0, 132.6] | 11.7 | 0.38 | 25 | 8.7 |
+| Distributed, until equilibrium | 0.9963 [0.9956, 0.9970] | 95.5 [94.7, 96.3] | 1.76 [1.46, 2.05] | 10.2 [7.7, 12.7] | 0.07 [0.00, 0.17] | 129.3 [126.0, 132.6] | 11.7 | 0.46 | 88 | 11.3 |
+| Distributed, pair moves, until pair-stable | 0.9993 [0.9991, 0.9995] | 99.2 [98.9, 99.4] | 1.73 [1.43, 2.04] | 10.4 [7.7, 13.1] | 0.06 [0.00, 0.16] | 129.3 [126.0, 132.7] | 11.6 | 0.71 | 1324 | 631.0 |
+| Distributed on clusters of 4, 1 sub-round per slot | 0.9705 [0.9671, 0.9738] | 62.4 [55.5, 69.3] | 1.49 [1.24, 1.75] | 9.4 [7.1, 11.6] | 0.15 [0.00, 0.34] | 128.1 [124.7, 131.4] | 14.0 | 0.48 | 15 | 2.0 |
+| Distributed on clusters of 4, 2 sub-rounds per slot | 0.9713 [0.9679, 0.9747] | 63.4 [56.5, 70.3] | 1.48 [1.23, 1.72] | 9.4 [7.1, 11.8] | 0.11 [0.00, 0.26] | 128.1 [124.7, 131.4] | 14.0 | 0.55 | 30 | 2.3 |
+| Distributed on clusters of 4, until equilibrium | 0.9724 [0.9689, 0.9760] | 64.8 [57.7, 71.8] | 1.46 [1.22, 1.69] | 9.4 [7.1, 11.8] | 0.15 [0.00, 0.34] | 128.0 [124.6, 131.4] | 14.0 | 0.63 | 92 | 2.8 |
+| Distributed on clusters of 8, 1 sub-round per slot | 0.9817 [0.9800, 0.9835] | 77.0 [73.0, 81.0] | 1.68 [1.37, 1.98] | 10.8 [7.7, 14.0] | 0.09 [0.00, 0.21] | 128.7 [125.5, 131.9] | 12.7 | 0.30 | 7 | 4.0 |
+| Distributed on clusters of 8, 2 sub-rounds per slot | 0.9866 [0.9852, 0.9880] | 82.9 [79.7, 86.1] | 1.68 [1.38, 1.97] | 10.5 [7.8, 13.1] | 0.08 [0.00, 0.20] | 128.8 [125.5, 132.1] | 12.5 | 0.39 | 14 | 5.2 |
+| Distributed on clusters of 8, until equilibrium | 0.9906 [0.9898, 0.9913] | 88.0 [86.0, 90.1] | 1.64 [1.36, 1.92] | 9.8 [7.2, 12.4] | 0.06 [0.00, 0.16] | 128.6 [125.2, 132.0] | 12.3 | 0.55 | 90 | 8.1 |
+| Central annealing, full budget, delay 0 | 0.9970 [0.9965, 0.9975] | 96.4 [95.8, 97.1] | 1.78 [1.47, 2.09] | 10.5 [7.8, 13.2] | 0.07 [0.00, 0.17] | 129.4 [126.1, 132.6] | 11.7 | 0.62 | 88 | 0.6 |
+| Central annealing, full budget, delay 1 | 0.9957 [0.9951, 0.9963] | 94.8 [93.9, 95.6] | 1.80 [1.49, 2.12] | 10.9 [8.1, 13.7] | 0.08 [0.00, 0.20] | 129.3 [126.1, 132.6] | 11.7 | 0.62 | 88 | 0.6 |
+| Central annealing, full budget, delay 2 | 0.9946 [0.9938, 0.9953] | 93.3 [92.3, 94.4] | 1.82 [1.51, 2.14] | 11.2 [8.3, 14.1] | 0.08 [0.00, 0.21] | 129.3 [126.0, 132.6] | 11.7 | 0.61 | 88 | 0.6 |
+| Central annealing, full budget, delay 4 | 0.9922 [0.9912, 0.9933] | 90.4 [88.8, 92.0] | 1.87 [1.54, 2.20] | 11.7 [8.6, 14.8] | 0.11 [0.00, 0.26] | 129.3 [126.0, 132.6] | 11.7 | 0.61 | 88 | 0.6 |
+| Central annealing, full budget, delay 8 | 0.9875 [0.9860, 0.9891] | 84.6 [82.0, 87.1] | 1.99 [1.63, 2.35] | 13.4 [9.4, 17.3] | 0.15 [0.00, 0.35] | 129.3 [126.0, 132.6] | 11.7 | 0.60 | 88 | 0.6 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 0 | 0.9731 [0.9707, 0.9755] | 66.5 [61.2, 71.7] | 1.94 [1.62, 2.27] | 12.3 [9.3, 15.2] | 0.11 [0.00, 0.26] | 129.1 [125.8, 132.3] | 12.6 | 0.19 | 3 | 0.2 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 1 | 0.9720 [0.9695, 0.9744] | 65.0 [59.6, 70.5] | 1.97 [1.64, 2.30] | 12.7 [9.5, 15.9] | 0.14 [0.00, 0.29] | 129.1 [125.8, 132.3] | 12.6 | 0.19 | 3 | 0.2 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 2 | 0.9708 [0.9683, 0.9734] | 63.6 [58.0, 69.3] | 1.99 [1.65, 2.32] | 13.7 [9.5, 17.9] | 0.15 [0.00, 0.30] | 129.1 [125.8, 132.3] | 12.6 | 0.19 | 3 | 0.2 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 4 | 0.9687 [0.9661, 0.9714] | 61.0 [54.9, 67.1] | 2.03 [1.69, 2.37] | 14.7 [9.9, 19.4] | 0.18 [0.00, 0.35] | 129.1 [125.8, 132.3] | 12.6 | 0.19 | 3 | 0.2 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 8 | 0.9647 [0.9617, 0.9677] | 56.1 [49.3, 62.8] | 2.12 [1.76, 2.49] | 16.0 [10.9, 21.0] | 0.22 [0.04, 0.40] | 129.1 [125.8, 132.3] | 12.6 | 0.19 | 3 | 0.2 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 0 | 0.9850 [0.9829, 0.9871] | 81.6 [78.5, 84.6] | 1.92 [1.58, 2.26] | 11.7 [8.7, 14.7] | 0.11 [0.00, 0.25] | 129.4 [126.1, 132.7] | 12.1 | 0.30 | 6 | 0.3 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 1 | 0.9838 [0.9816, 0.9860] | 80.0 [76.7, 83.3] | 1.94 [1.59, 2.29] | 12.1 [8.9, 15.2] | 0.13 [0.00, 0.28] | 129.4 [126.1, 132.7] | 12.1 | 0.30 | 6 | 0.3 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 2 | 0.9826 [0.9802, 0.9849] | 78.5 [75.0, 82.0] | 1.97 [1.62, 2.32] | 12.7 [9.2, 16.2] | 0.15 [0.00, 0.32] | 129.4 [126.1, 132.7] | 12.1 | 0.30 | 6 | 0.3 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 4 | 0.9801 [0.9775, 0.9828] | 75.5 [71.5, 79.5] | 2.02 [1.65, 2.40] | 13.3 [9.7, 17.0] | 0.20 [0.00, 0.39] | 129.4 [126.1, 132.7] | 12.1 | 0.30 | 6 | 0.3 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 8 | 0.9754 [0.9723, 0.9785] | 69.7 [64.9, 74.5] | 2.11 [1.73, 2.49] | 14.5 [10.5, 18.4] | 0.25 [0.02, 0.48] | 129.4 [126.1, 132.7] | 12.1 | 0.29 | 6 | 0.3 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 0 | 0.9942 [0.9933, 0.9952] | 93.0 [91.6, 94.4] | 1.77 [1.46, 2.08] | 10.6 [7.8, 13.4] | 0.07 [0.00, 0.17] | 129.5 [126.1, 132.8] | 11.8 | 0.50 | 25 | 0.5 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 1 | 0.9929 [0.9918, 0.9941] | 91.4 [89.8, 93.0] | 1.80 [1.48, 2.11] | 10.9 [8.1, 13.7] | 0.08 [0.00, 0.20] | 129.5 [126.1, 132.8] | 11.8 | 0.50 | 25 | 0.5 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 2 | 0.9918 [0.9905, 0.9930] | 89.9 [88.1, 91.8] | 1.82 [1.51, 2.14] | 11.6 [8.4, 14.7] | 0.09 [0.00, 0.21] | 129.5 [126.1, 132.8] | 11.8 | 0.49 | 25 | 0.5 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 4 | 0.9895 [0.9880, 0.9910] | 87.0 [84.7, 89.4] | 1.88 [1.54, 2.21] | 12.4 [8.8, 16.1] | 0.11 [0.00, 0.26] | 129.4 [126.1, 132.8] | 11.8 | 0.49 | 25 | 0.5 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 8 | 0.9847 [0.9828, 0.9867] | 81.1 [78.0, 84.3] | 1.99 [1.63, 2.34] | 14.0 [9.7, 18.2] | 0.15 [0.00, 0.36] | 129.4 [126.1, 132.7] | 11.8 | 0.48 | 25 | 0.5 |
+| Central greedy from scratch, delay 0 | 0.9962 [0.9956, 0.9968] | 95.2 [94.2, 96.2] | 1.80 [1.48, 2.12] | 10.6 [7.9, 13.3] | 0.21 [0.00, 0.53] | 129.2 [125.9, 132.5] | 11.5 | 1.34 | 648 | 1.3 |
+| Central greedy from scratch, delay 1 | 0.9949 [0.9942, 0.9956] | 93.6 [92.2, 94.9] | 1.83 [1.50, 2.15] | 11.1 [8.3, 13.9] | 0.22 [0.00, 0.55] | 129.2 [125.9, 132.5] | 11.5 | 1.34 | 648 | 1.3 |
+| Central greedy from scratch, delay 2 | 0.9938 [0.9930, 0.9946] | 92.1 [90.5, 93.7] | 1.86 [1.53, 2.19] | 11.5 [8.5, 14.4] | 0.23 [0.00, 0.56] | 129.2 [125.8, 132.5] | 11.5 | 1.33 | 648 | 1.3 |
+| Central greedy from scratch, delay 4 | 0.9916 [0.9906, 0.9926] | 89.3 [87.3, 91.3] | 1.90 [1.55, 2.24] | 12.1 [9.0, 15.3] | 0.27 [0.00, 0.63] | 129.1 [125.8, 132.5] | 11.5 | 1.32 | 648 | 1.3 |
+| Central greedy from scratch, delay 8 | 0.9866 [0.9852, 0.9881] | 83.1 [80.3, 86.0] | 2.00 [1.63, 2.38] | 13.8 [10.0, 17.6] | 0.34 [0.00, 0.76] | 129.1 [125.8, 132.5] | 11.5 | 1.30 | 648 | 1.3 |
+| Periodic re-optimisation (reference solver) | 0.9880 [0.9865, 0.9894] | 85.0 [82.5, 87.6] | 1.90 [1.59, 2.21] | 14.4 [10.0, 18.8] | 0.19 [0.01, 0.37] | 129.3 [126.0, 132.5] | 11.5 | 0.26 | 401 | 0.3 |
+| Static assignment (optimised at slot 0) | 0.9127 [0.8987, 0.9267] | 0.0 [0.0, 0.0] | 4.57 [3.10, 6.04] | 45.4 [31.4, 59.4] | 0.78 [0.11, 1.46] | 129.1 [125.4, 132.7] | 11.8 | 0.00 | 0 | 0.0 |
+
+All controllers, speed 10 m/s (23.1 colours, 76.3% of the AP-target pairs in line of sight, reference solver 8719 evaluations per slot):
+
+| Controller | Utility / best known | Tracking gain captured (%) | PEB median (m) | PEB 90th percentile (m) | Target-slots without a pair (%) | Sum rate (bit/s/Hz) | Active APs | Mode switches per slot | Evaluations per slot | Messages per slot |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Reference (best response with pair moves, restarts, no delay) | 1.0000 [1.0000, 1.0000] | 100.0 [100.0, 100.0] | 1.59 [1.38, 1.80] | 8.1 [6.5, 9.7] | 0.04 [0.00, 0.09] | 129.4 [126.1, 132.7] | 11.6 | 1.42 | 8724 | 1.4 |
+| Distributed, 1 sub-round per slot | 0.9644 [0.9618, 0.9670] | 58.2 [53.3, 63.1] | 1.98 [1.69, 2.27] | 12.3 [10.0, 14.6] | 0.08 [0.01, 0.15] | 129.2 [125.9, 132.5] | 12.7 | 0.26 | 3 | 5.9 |
+| Distributed, 2 sub-rounds per slot | 0.9790 [0.9773, 0.9808] | 75.2 [71.7, 78.7] | 1.79 [1.56, 2.03] | 10.3 [8.4, 12.2] | 0.11 [0.01, 0.21] | 129.3 [125.9, 132.7] | 12.3 | 0.39 | 6 | 8.8 |
+| Distributed, 8 sub-rounds per slot | 0.9927 [0.9917, 0.9937] | 91.5 [90.2, 92.8] | 1.66 [1.43, 1.88] | 8.7 [7.0, 10.5] | 0.04 [0.00, 0.10] | 129.3 [126.0, 132.6] | 11.8 | 0.63 | 25 | 14.3 |
+| Distributed, until equilibrium | 0.9962 [0.9957, 0.9967] | 95.6 [94.9, 96.3] | 1.62 [1.41, 1.84] | 8.4 [6.7, 10.1] | 0.04 [0.00, 0.09] | 129.3 [126.0, 132.5] | 11.7 | 0.80 | 98 | 19.7 |
+| Distributed, pair moves, until pair-stable | 0.9994 [0.9993, 0.9996] | 99.4 [99.2, 99.5] | 1.59 [1.38, 1.81] | 8.2 [6.6, 9.8] | 0.04 [0.00, 0.09] | 129.4 [126.0, 132.7] | 11.6 | 1.16 | 1423 | 684.3 |
+| Distributed on clusters of 4, 1 sub-round per slot | 0.9678 [0.9655, 0.9700] | 61.3 [54.8, 67.7] | 1.38 [1.19, 1.57] | 7.7 [6.2, 9.1] | 0.08 [0.00, 0.17] | 127.7 [124.4, 131.1] | 14.1 | 0.75 | 15 | 3.1 |
+| Distributed on clusters of 4, 2 sub-rounds per slot | 0.9697 [0.9677, 0.9718] | 63.6 [57.6, 69.7] | 1.35 [1.16, 1.53] | 7.3 [5.9, 8.6] | 0.08 [0.00, 0.18] | 127.7 [124.3, 131.1] | 14.1 | 0.91 | 30 | 3.8 |
+| Distributed on clusters of 4, until equilibrium | 0.9727 [0.9705, 0.9749] | 66.9 [61.0, 72.9] | 1.33 [1.15, 1.52] | 7.2 [5.7, 8.7] | 0.08 [0.00, 0.18] | 128.0 [124.7, 131.3] | 14.1 | 1.10 | 104 | 4.8 |
+| Distributed on clusters of 8, 1 sub-round per slot | 0.9742 [0.9719, 0.9765] | 69.2 [64.6, 73.9] | 1.62 [1.40, 1.84] | 8.6 [6.9, 10.4] | 0.05 [0.00, 0.11] | 128.6 [125.3, 131.9] | 13.1 | 0.44 | 7 | 5.7 |
+| Distributed on clusters of 8, 2 sub-rounds per slot | 0.9828 [0.9816, 0.9839] | 79.7 [77.1, 82.3] | 1.52 [1.32, 1.72] | 8.2 [6.5, 9.9] | 0.05 [0.00, 0.11] | 128.7 [125.4, 132.1] | 12.7 | 0.60 | 14 | 7.9 |
+| Distributed on clusters of 8, until equilibrium | 0.9907 [0.9897, 0.9916] | 88.9 [87.0, 90.8] | 1.50 [1.29, 1.72] | 7.8 [6.2, 9.5] | 0.04 [0.00, 0.09] | 128.6 [125.3, 131.9] | 12.3 | 0.94 | 102 | 13.9 |
+| Central annealing, full budget, delay 0 | 0.9967 [0.9962, 0.9972] | 96.2 [95.6, 96.7] | 1.62 [1.41, 1.83] | 8.3 [6.7, 9.9] | 0.04 [0.00, 0.09] | 129.3 [126.0, 132.6] | 11.7 | 1.03 | 98 | 1.0 |
+| Central annealing, full budget, delay 1 | 0.9945 [0.9939, 0.9951] | 93.6 [92.7, 94.5] | 1.65 [1.43, 1.86] | 8.7 [7.1, 10.4] | 0.05 [0.00, 0.11] | 129.3 [126.0, 132.6] | 11.7 | 1.03 | 98 | 1.0 |
+| Central annealing, full budget, delay 2 | 0.9923 [0.9915, 0.9932] | 91.0 [89.7, 92.3] | 1.69 [1.47, 1.90] | 9.2 [7.4, 10.9] | 0.08 [0.00, 0.18] | 129.3 [126.0, 132.6] | 11.7 | 1.02 | 98 | 1.0 |
+| Central annealing, full budget, delay 4 | 0.9878 [0.9867, 0.9889] | 85.6 [83.6, 87.6] | 1.77 [1.55, 1.99] | 10.0 [8.1, 11.9] | 0.13 [0.00, 0.27] | 129.3 [126.0, 132.6] | 11.7 | 1.02 | 98 | 1.0 |
+| Central annealing, full budget, delay 8 | 0.9779 [0.9763, 0.9794] | 73.9 [70.4, 77.3] | 1.98 [1.74, 2.22] | 12.4 [10.2, 14.5] | 0.21 [0.07, 0.36] | 129.3 [126.0, 132.6] | 11.7 | 1.00 | 98 | 1.0 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 0 | 0.9639 [0.9607, 0.9672] | 57.5 [51.5, 63.5] | 1.87 [1.66, 2.08] | 11.9 [10.0, 13.8] | 0.14 [0.03, 0.25] | 129.3 [125.9, 132.7] | 12.9 | 0.28 | 3 | 0.3 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 1 | 0.9622 [0.9589, 0.9655] | 55.5 [49.3, 61.7] | 1.91 [1.69, 2.12] | 12.3 [10.3, 14.3] | 0.18 [0.05, 0.31] | 129.3 [125.9, 132.7] | 12.9 | 0.28 | 3 | 0.3 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 2 | 0.9605 [0.9571, 0.9639] | 53.5 [47.1, 59.9] | 1.94 [1.72, 2.15] | 12.7 [10.7, 14.8] | 0.20 [0.06, 0.35] | 129.3 [125.9, 132.7] | 12.9 | 0.28 | 3 | 0.3 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 4 | 0.9572 [0.9536, 0.9609] | 49.8 [43.1, 56.5] | 2.02 [1.77, 2.27] | 13.5 [11.4, 15.6] | 0.23 [0.06, 0.40] | 129.3 [125.9, 132.7] | 12.9 | 0.28 | 3 | 0.3 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 8 | 0.9512 [0.9471, 0.9552] | 42.9 [35.7, 50.1] | 2.16 [1.88, 2.44] | 15.2 [12.7, 17.7] | 0.20 [0.06, 0.35] | 129.3 [125.9, 132.7] | 12.9 | 0.27 | 3 | 0.3 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 0 | 0.9792 [0.9773, 0.9810] | 75.5 [72.3, 78.7] | 1.77 [1.54, 2.00] | 9.7 [7.8, 11.7] | 0.05 [0.00, 0.12] | 129.3 [126.0, 132.6] | 12.4 | 0.45 | 6 | 0.4 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 1 | 0.9770 [0.9750, 0.9790] | 72.9 [69.4, 76.5] | 1.81 [1.57, 2.04] | 10.3 [8.2, 12.4] | 0.07 [0.00, 0.15] | 129.3 [126.0, 132.6] | 12.4 | 0.45 | 6 | 0.4 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 2 | 0.9748 [0.9727, 0.9769] | 70.3 [66.4, 74.2] | 1.84 [1.61, 2.08] | 10.9 [8.6, 13.1] | 0.09 [0.01, 0.17] | 129.3 [126.0, 132.6] | 12.4 | 0.45 | 6 | 0.4 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 4 | 0.9706 [0.9684, 0.9728] | 65.3 [60.9, 69.8] | 1.93 [1.69, 2.18] | 11.6 [9.4, 13.8] | 0.10 [0.02, 0.19] | 129.3 [126.0, 132.6] | 12.4 | 0.44 | 6 | 0.4 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 8 | 0.9623 [0.9595, 0.9650] | 55.6 [50.0, 61.1] | 2.09 [1.83, 2.35] | 13.6 [11.4, 15.7] | 0.11 [0.00, 0.23] | 129.3 [126.0, 132.6] | 12.4 | 0.43 | 6 | 0.4 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 0 | 0.9925 [0.9919, 0.9931] | 91.2 [90.1, 92.3] | 1.63 [1.41, 1.84] | 8.7 [6.9, 10.5] | 0.04 [0.00, 0.09] | 129.3 [126.0, 132.6] | 11.9 | 0.77 | 25 | 0.8 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 1 | 0.9904 [0.9896, 0.9912] | 88.7 [87.3, 90.2] | 1.65 [1.43, 1.87] | 9.0 [7.2, 10.9] | 0.05 [0.00, 0.12] | 129.3 [126.0, 132.6] | 11.9 | 0.76 | 25 | 0.8 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 2 | 0.9882 [0.9873, 0.9892] | 86.2 [84.4, 88.0] | 1.69 [1.47, 1.91] | 9.4 [7.5, 11.3] | 0.07 [0.00, 0.16] | 129.3 [126.0, 132.6] | 11.9 | 0.76 | 25 | 0.8 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 4 | 0.9837 [0.9824, 0.9850] | 80.8 [78.3, 83.3] | 1.79 [1.56, 2.02] | 10.2 [8.2, 12.3] | 0.10 [0.00, 0.22] | 129.3 [126.0, 132.6] | 11.9 | 0.75 | 25 | 0.8 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 8 | 0.9739 [0.9721, 0.9757] | 69.2 [65.2, 73.2] | 2.03 [1.76, 2.30] | 12.1 [10.0, 14.2] | 0.16 [0.01, 0.30] | 129.3 [126.0, 132.6] | 11.9 | 0.74 | 25 | 0.7 |
+| Central greedy from scratch, delay 0 | 0.9960 [0.9955, 0.9965] | 95.3 [94.4, 96.2] | 1.66 [1.43, 1.88] | 8.5 [6.8, 10.2] | 0.19 [0.00, 0.39] | 129.1 [125.8, 132.3] | 11.5 | 2.11 | 649 | 2.1 |
+| Central greedy from scratch, delay 1 | 0.9939 [0.9932, 0.9946] | 92.8 [91.6, 94.0] | 1.69 [1.46, 1.91] | 9.0 [7.2, 10.7] | 0.20 [0.00, 0.40] | 129.1 [125.8, 132.3] | 11.5 | 2.10 | 649 | 2.1 |
+| Central greedy from scratch, delay 2 | 0.9919 [0.9912, 0.9927] | 90.4 [88.9, 91.9] | 1.71 [1.48, 1.94] | 9.4 [7.5, 11.3] | 0.22 [0.00, 0.46] | 129.1 [125.8, 132.3] | 11.5 | 2.09 | 649 | 2.1 |
+| Central greedy from scratch, delay 4 | 0.9874 [0.9864, 0.9885] | 85.1 [82.9, 87.3] | 1.78 [1.55, 2.02] | 10.3 [8.3, 12.4] | 0.25 [0.00, 0.51] | 129.1 [125.8, 132.4] | 11.5 | 2.07 | 649 | 2.1 |
+| Central greedy from scratch, delay 8 | 0.9774 [0.9759, 0.9789] | 73.2 [69.5, 76.8] | 2.02 [1.74, 2.29] | 12.6 [10.1, 15.1] | 0.34 [0.05, 0.64] | 129.1 [125.8, 132.4] | 11.5 | 2.04 | 649 | 2.0 |
+| Periodic re-optimisation (reference solver) | 0.9753 [0.9732, 0.9775] | 70.7 [66.3, 75.2] | 2.08 [1.80, 2.35] | 13.0 [10.9, 15.1] | 0.08 [0.00, 0.16] | 129.4 [126.1, 132.7] | 11.6 | 0.34 | 404 | 0.3 |
+| Static assignment (optimised at slot 0) | 0.9091 [0.8962, 0.9221] | 0.0 [0.0, 0.0] | 4.06 [3.16, 4.95] | 40.4 [29.2, 51.7] | 0.82 [0.19, 1.45] | 129.0 [125.4, 132.7] | 11.7 | 0.00 | 0 | 0.0 |
+
+All controllers, speed 20 m/s (23.1 colours, 75.9% of the AP-target pairs in line of sight, reference solver 9027 evaluations per slot):
+
+| Controller | Utility / best known | Tracking gain captured (%) | PEB median (m) | PEB 90th percentile (m) | Target-slots without a pair (%) | Sum rate (bit/s/Hz) | Active APs | Mode switches per slot | Evaluations per slot | Messages per slot |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Reference (best response with pair moves, restarts, no delay) | 1.0000 [1.0000, 1.0000] | 100.0 [99.9, 100.0] | 1.62 [1.45, 1.80] | 8.8 [7.6, 10.0] | 0.02 [0.00, 0.05] | 129.4 [126.1, 132.7] | 11.7 | 2.28 | 9033 | 2.3 |
+| Distributed, 1 sub-round per slot | 0.9472 [0.9432, 0.9512] | 41.8 [37.1, 46.5] | 2.30 [2.06, 2.55] | 16.0 [14.3, 17.7] | 0.14 [0.02, 0.26] | 129.1 [125.8, 132.4] | 13.1 | 0.32 | 3 | 7.3 |
+| Distributed, 2 sub-rounds per slot | 0.9661 [0.9642, 0.9679] | 61.9 [58.0, 65.8] | 2.05 [1.84, 2.26] | 12.9 [11.6, 14.2] | 0.08 [0.02, 0.13] | 129.4 [126.0, 132.8] | 12.7 | 0.53 | 6 | 12.1 |
+| Distributed, 8 sub-rounds per slot | 0.9897 [0.9889, 0.9905] | 88.5 [87.4, 89.7] | 1.73 [1.54, 1.92] | 9.7 [8.5, 11.0] | 0.03 [0.00, 0.08] | 129.5 [126.1, 132.8] | 12.1 | 1.00 | 25 | 22.8 |
+| Distributed, until equilibrium | 0.9963 [0.9957, 0.9969] | 95.9 [95.3, 96.6] | 1.68 [1.49, 1.86] | 9.2 [8.0, 10.4] | 0.02 [0.00, 0.05] | 129.3 [126.0, 132.6] | 11.8 | 1.40 | 115 | 35.5 |
+| Distributed, pair moves, until pair-stable | 0.9994 [0.9993, 0.9995] | 99.4 [99.2, 99.5] | 1.63 [1.45, 1.80] | 8.8 [7.6, 10.0] | 0.02 [0.00, 0.05] | 129.4 [126.1, 132.7] | 11.7 | 1.97 | 1597 | 779.3 |
+| Distributed on clusters of 4, 1 sub-round per slot | 0.9631 [0.9609, 0.9652] | 58.0 [52.4, 63.5] | 1.47 [1.32, 1.63] | 8.6 [7.4, 9.7] | 0.07 [0.00, 0.14] | 127.8 [124.5, 131.1] | 14.3 | 1.07 | 15 | 4.3 |
+| Distributed on clusters of 4, 2 sub-rounds per slot | 0.9685 [0.9669, 0.9700] | 64.1 [59.3, 68.9] | 1.38 [1.23, 1.53] | 8.1 [7.0, 9.3] | 0.04 [0.00, 0.10] | 128.0 [124.6, 131.4] | 14.4 | 1.44 | 30 | 5.9 |
+| Distributed on clusters of 4, until equilibrium | 0.9712 [0.9693, 0.9731] | 67.4 [63.2, 71.6] | 1.33 [1.19, 1.48] | 7.6 [6.4, 8.7] | 0.04 [0.00, 0.08] | 127.9 [124.7, 131.2] | 14.4 | 1.90 | 120 | 8.3 |
+| Distributed on clusters of 8, 1 sub-round per slot | 0.9607 [0.9585, 0.9628] | 56.1 [51.9, 60.2] | 1.73 [1.55, 1.92] | 10.9 [9.7, 12.0] | 0.07 [0.00, 0.17] | 128.8 [125.4, 132.1] | 13.7 | 0.60 | 7 | 7.6 |
+| Distributed on clusters of 8, 2 sub-rounds per slot | 0.9752 [0.9733, 0.9771] | 72.2 [69.1, 75.3] | 1.60 [1.44, 1.75] | 9.4 [8.2, 10.6] | 0.04 [0.00, 0.10] | 128.9 [125.5, 132.2] | 13.3 | 0.88 | 14 | 11.6 |
+| Distributed on clusters of 8, until equilibrium | 0.9898 [0.9889, 0.9906] | 88.4 [86.9, 90.0] | 1.52 [1.35, 1.69] | 8.6 [7.4, 9.8] | 0.02 [0.00, 0.05] | 128.7 [125.3, 132.0] | 12.5 | 1.65 | 120 | 24.8 |
+| Central annealing, full budget, delay 0 | 0.9960 [0.9956, 0.9965] | 95.6 [95.1, 96.2] | 1.66 [1.49, 1.84] | 9.2 [8.0, 10.5] | 0.03 [0.00, 0.06] | 129.4 [126.1, 132.7] | 11.8 | 1.74 | 115 | 1.7 |
+| Central annealing, full budget, delay 1 | 0.9918 [0.9913, 0.9923] | 90.8 [89.7, 91.8] | 1.73 [1.55, 1.91] | 10.2 [8.9, 11.5] | 0.08 [0.02, 0.14] | 129.4 [126.1, 132.7] | 11.8 | 1.73 | 115 | 1.7 |
+| Central annealing, full budget, delay 2 | 0.9872 [0.9865, 0.9879] | 85.6 [84.0, 87.2] | 1.82 [1.64, 2.01] | 11.0 [9.7, 12.4] | 0.12 [0.02, 0.22] | 129.4 [126.1, 132.7] | 11.8 | 1.72 | 115 | 1.7 |
+| Central annealing, full budget, delay 4 | 0.9772 [0.9761, 0.9783] | 74.4 [71.7, 77.1] | 2.05 [1.86, 2.24] | 13.0 [11.5, 14.6] | 0.23 [0.09, 0.37] | 129.4 [126.0, 132.7] | 11.8 | 1.71 | 115 | 1.7 |
+| Central annealing, full budget, delay 8 | 0.9564 [0.9543, 0.9584] | 51.1 [46.3, 55.9] | 2.59 [2.36, 2.83] | 17.7 [15.7, 19.6] | 0.27 [0.11, 0.42] | 129.3 [126.0, 132.7] | 11.8 | 1.68 | 115 | 1.7 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 0 | 0.9485 [0.9454, 0.9515] | 42.4 [36.9, 48.0] | 2.17 [1.96, 2.39] | 14.8 [13.1, 16.4] | 0.15 [0.04, 0.25] | 129.5 [126.1, 132.9] | 13.4 | 0.38 | 3 | 0.4 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 1 | 0.9458 [0.9426, 0.9489] | 39.4 [33.5, 45.3] | 2.24 [2.03, 2.46] | 15.5 [13.8, 17.2] | 0.20 [0.09, 0.31] | 129.5 [126.1, 132.9] | 13.4 | 0.38 | 3 | 0.4 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 2 | 0.9432 [0.9399, 0.9465] | 36.5 [30.4, 42.6] | 2.30 [2.09, 2.52] | 16.1 [14.4, 17.8] | 0.25 [0.12, 0.38] | 129.5 [126.1, 132.9] | 13.4 | 0.38 | 3 | 0.4 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 4 | 0.9384 [0.9349, 0.9419] | 31.2 [24.8, 37.7] | 2.41 [2.19, 2.63] | 17.4 [15.6, 19.2] | 0.33 [0.18, 0.49] | 129.5 [126.1, 132.9] | 13.4 | 0.37 | 3 | 0.4 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 8 | 0.9305 [0.9266, 0.9343] | 22.5 [15.4, 29.5] | 2.65 [2.40, 2.90] | 20.4 [18.5, 22.4] | 0.41 [0.22, 0.60] | 129.5 [126.1, 132.9] | 13.4 | 0.37 | 3 | 0.4 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 0 | 0.9677 [0.9655, 0.9699] | 63.9 [60.3, 67.5] | 1.90 [1.72, 2.09] | 11.2 [10.1, 12.2] | 0.07 [0.00, 0.15] | 129.6 [126.3, 132.9] | 13.0 | 0.68 | 6 | 0.7 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 1 | 0.9639 [0.9616, 0.9662] | 59.6 [55.6, 63.6] | 1.99 [1.81, 2.17] | 12.1 [10.9, 13.4] | 0.14 [0.04, 0.23] | 129.6 [126.3, 132.9] | 13.0 | 0.68 | 6 | 0.7 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 2 | 0.9600 [0.9576, 0.9624] | 55.2 [50.8, 59.6] | 2.08 [1.89, 2.26] | 12.9 [11.5, 14.2] | 0.18 [0.07, 0.29] | 129.6 [126.3, 132.9] | 13.0 | 0.68 | 6 | 0.7 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 4 | 0.9525 [0.9498, 0.9552] | 46.8 [41.7, 52.0] | 2.27 [2.08, 2.45] | 14.5 [13.1, 16.0] | 0.26 [0.12, 0.39] | 129.6 [126.3, 132.9] | 13.0 | 0.67 | 6 | 0.7 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 8 | 0.9399 [0.9367, 0.9431] | 32.8 [26.5, 39.1] | 2.58 [2.37, 2.79] | 18.8 [16.9, 20.7] | 0.32 [0.16, 0.49] | 129.6 [126.2, 132.9] | 12.9 | 0.66 | 6 | 0.7 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 0 | 0.9888 [0.9880, 0.9896] | 87.5 [86.0, 88.9] | 1.71 [1.53, 1.89] | 9.6 [8.4, 10.8] | 0.03 [0.00, 0.06] | 129.4 [126.0, 132.7] | 12.2 | 1.28 | 25 | 1.3 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 1 | 0.9844 [0.9835, 0.9854] | 82.5 [80.5, 84.4] | 1.79 [1.61, 1.97] | 10.5 [9.2, 11.8] | 0.07 [0.03, 0.11] | 129.4 [126.0, 132.7] | 12.2 | 1.27 | 25 | 1.3 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 2 | 0.9798 [0.9788, 0.9808] | 77.3 [74.8, 79.7] | 1.88 [1.70, 2.07] | 11.6 [10.1, 13.1] | 0.13 [0.06, 0.19] | 129.3 [126.0, 132.7] | 12.2 | 1.27 | 25 | 1.3 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 4 | 0.9701 [0.9687, 0.9714] | 66.4 [63.0, 69.7] | 2.09 [1.90, 2.29] | 13.2 [11.7, 14.7] | 0.19 [0.10, 0.28] | 129.3 [126.0, 132.7] | 12.2 | 1.26 | 25 | 1.3 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 8 | 0.9517 [0.9494, 0.9541] | 46.0 [40.9, 51.1] | 2.59 [2.34, 2.84] | 17.5 [15.4, 19.6] | 0.35 [0.20, 0.50] | 129.3 [126.0, 132.7] | 12.1 | 1.23 | 25 | 1.2 |
+| Central greedy from scratch, delay 0 | 0.9956 [0.9951, 0.9961] | 95.1 [94.5, 95.8] | 1.69 [1.50, 1.87] | 9.3 [8.1, 10.4] | 0.23 [0.08, 0.38] | 129.1 [125.8, 132.4] | 11.6 | 3.15 | 655 | 3.1 |
+| Central greedy from scratch, delay 1 | 0.9916 [0.9909, 0.9922] | 90.5 [89.3, 91.7] | 1.75 [1.56, 1.94] | 10.3 [9.0, 11.6] | 0.26 [0.09, 0.42] | 129.1 [125.8, 132.4] | 11.6 | 3.14 | 655 | 3.1 |
+| Central greedy from scratch, delay 2 | 0.9871 [0.9863, 0.9878] | 85.4 [83.7, 87.1] | 1.84 [1.64, 2.03] | 11.4 [10.0, 12.9] | 0.27 [0.10, 0.44] | 129.1 [125.8, 132.4] | 11.6 | 3.13 | 655 | 3.1 |
+| Central greedy from scratch, delay 4 | 0.9770 [0.9758, 0.9782] | 74.1 [71.2, 77.0] | 2.07 [1.86, 2.28] | 13.3 [11.6, 14.9] | 0.39 [0.17, 0.60] | 129.1 [125.8, 132.4] | 11.6 | 3.10 | 655 | 3.1 |
+| Central greedy from scratch, delay 8 | 0.9557 [0.9536, 0.9579] | 50.3 [45.0, 55.5] | 2.63 [2.37, 2.89] | 18.4 [16.3, 20.5] | 0.43 [0.24, 0.61] | 129.1 [125.8, 132.4] | 11.6 | 3.05 | 655 | 3.0 |
+| Periodic re-optimisation (reference solver) | 0.9575 [0.9552, 0.9597] | 52.3 [47.6, 57.1] | 2.57 [2.31, 2.83] | 19.9 [17.3, 22.5] | 0.25 [0.08, 0.42] | 129.5 [126.2, 132.8] | 11.7 | 0.41 | 414 | 0.4 |
+| Static assignment (optimised at slot 0) | 0.9072 [0.8976, 0.9168] | 0.0 [0.0, 0.0] | 4.27 [3.49, 5.06] | 41.5 [31.1, 51.8] | 1.17 [0.54, 1.80] | 128.9 [125.4, 132.4] | 11.7 | 0.00 | 0 | 0.0 |
+
+All controllers, speed 40 m/s (23.1 colours, 75.9% of the AP-target pairs in line of sight, reference solver 9174 evaluations per slot):
+
+| Controller | Utility / best known | Tracking gain captured (%) | PEB median (m) | PEB 90th percentile (m) | Target-slots without a pair (%) | Sum rate (bit/s/Hz) | Active APs | Mode switches per slot | Evaluations per slot | Messages per slot |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Reference (best response with pair moves, restarts, no delay) | 1.0000 [0.9999, 1.0000] | 100.0 [99.9, 100.0] | 1.62 [1.48, 1.76] | 8.6 [7.4, 9.8] | 0.07 [0.00, 0.17] | 129.4 [126.0, 132.8] | 11.6 | 3.38 | 9180 | 3.4 |
+| Distributed, 1 sub-round per slot | 0.9364 [0.9332, 0.9395] | 30.6 [23.4, 37.8] | 2.41 [2.22, 2.61] | 19.3 [17.3, 21.3] | 0.57 [0.31, 0.82] | 129.3 [125.8, 132.8] | 13.2 | 0.33 | 3 | 7.6 |
+| Distributed, 2 sub-rounds per slot | 0.9500 [0.9478, 0.9521] | 45.6 [40.5, 50.6] | 2.21 [2.04, 2.38] | 13.9 [12.6, 15.1] | 0.24 [0.09, 0.39] | 129.2 [125.9, 132.6] | 13.1 | 0.65 | 6 | 14.7 |
+| Distributed, 8 sub-rounds per slot | 0.9839 [0.9830, 0.9848] | 82.4 [80.5, 84.3] | 1.75 [1.61, 1.90] | 9.8 [8.6, 10.9] | 0.08 [0.00, 0.19] | 129.3 [126.0, 132.7] | 12.2 | 1.54 | 25 | 35.1 |
+| Distributed, until equilibrium | 0.9959 [0.9954, 0.9965] | 95.5 [94.8, 96.3] | 1.66 [1.51, 1.81] | 8.9 [7.7, 10.0] | 0.07 [0.00, 0.17] | 129.3 [125.9, 132.6] | 11.7 | 2.31 | 136 | 59.8 |
+| Distributed, pair moves, until pair-stable | 0.9995 [0.9994, 0.9995] | 99.4 [99.3, 99.5] | 1.62 [1.48, 1.77] | 8.6 [7.4, 9.7] | 0.07 [0.00, 0.17] | 129.4 [126.0, 132.8] | 11.6 | 3.07 | 1789 | 890.5 |
+| Distributed on clusters of 4, 1 sub-round per slot | 0.9532 [0.9501, 0.9562] | 48.7 [42.8, 54.7] | 1.68 [1.52, 1.83] | 11.0 [9.2, 12.8] | 0.13 [0.01, 0.24] | 127.3 [123.8, 130.8] | 13.9 | 1.47 | 15 | 5.7 |
+| Distributed on clusters of 4, 2 sub-rounds per slot | 0.9653 [0.9632, 0.9674] | 62.2 [58.1, 66.2] | 1.43 [1.30, 1.56] | 8.1 [7.0, 9.2] | 0.08 [0.00, 0.19] | 127.8 [124.4, 131.2] | 14.2 | 2.14 | 30 | 8.5 |
+| Distributed on clusters of 4, until equilibrium | 0.9718 [0.9700, 0.9736] | 69.2 [65.7, 72.7] | 1.35 [1.22, 1.47] | 7.3 [6.3, 8.3] | 0.08 [0.00, 0.19] | 127.9 [124.6, 131.2] | 14.2 | 3.09 | 137 | 13.5 |
+| Distributed on clusters of 8, 1 sub-round per slot | 0.9475 [0.9447, 0.9502] | 42.7 [36.6, 48.7] | 1.84 [1.68, 1.99] | 11.7 [10.3, 13.2] | 0.13 [0.00, 0.26] | 128.6 [125.3, 131.9] | 14.1 | 0.75 | 7 | 9.2 |
+| Distributed on clusters of 8, 2 sub-rounds per slot | 0.9624 [0.9608, 0.9639] | 58.8 [54.5, 63.1] | 1.70 [1.57, 1.83] | 10.2 [9.1, 11.2] | 0.13 [0.00, 0.28] | 128.6 [125.3, 132.0] | 13.6 | 1.22 | 14 | 15.5 |
+| Distributed on clusters of 8, until equilibrium | 0.9900 [0.9892, 0.9907] | 89.0 [87.6, 90.4] | 1.52 [1.39, 1.65] | 8.3 [7.1, 9.4] | 0.07 [0.00, 0.17] | 128.7 [125.3, 132.1] | 12.4 | 2.61 | 138 | 39.9 |
+| Central annealing, full budget, delay 0 | 0.9954 [0.9950, 0.9957] | 94.9 [94.3, 95.6] | 1.66 [1.51, 1.80] | 8.9 [7.8, 10.0] | 0.08 [0.00, 0.18] | 129.4 [126.0, 132.7] | 11.8 | 2.78 | 136 | 2.8 |
+| Central annealing, full budget, delay 1 | 0.9870 [0.9864, 0.9875] | 85.7 [84.1, 87.3] | 1.80 [1.65, 1.95] | 10.6 [9.2, 12.0] | 0.18 [0.04, 0.32] | 129.4 [126.0, 132.7] | 11.8 | 2.77 | 136 | 2.8 |
+| Central annealing, full budget, delay 2 | 0.9771 [0.9763, 0.9779] | 74.9 [72.2, 77.6] | 2.00 [1.85, 2.15] | 12.7 [11.1, 14.3] | 0.27 [0.08, 0.45] | 129.3 [126.0, 132.7] | 11.8 | 2.76 | 136 | 2.8 |
+| Central annealing, full budget, delay 4 | 0.9565 [0.9550, 0.9579] | 52.3 [47.3, 57.4] | 2.53 [2.35, 2.72] | 16.6 [14.8, 18.5] | 0.39 [0.20, 0.57] | 129.3 [126.0, 132.7] | 11.8 | 2.74 | 136 | 2.7 |
+| Central annealing, full budget, delay 8 | 0.9302 [0.9280, 0.9323] | 23.9 [16.6, 31.1] | 3.35 [3.08, 3.63] | 27.2 [24.6, 29.8] | 0.76 [0.55, 0.97] | 129.3 [126.0, 132.7] | 11.8 | 2.69 | 136 | 2.7 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 0 | 0.9366 [0.9334, 0.9397] | 31.0 [24.1, 37.9] | 2.27 [2.05, 2.48] | 16.2 [14.2, 18.3] | 0.35 [0.16, 0.55] | 129.6 [126.1, 133.0] | 13.8 | 0.46 | 3 | 0.5 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 1 | 0.9330 [0.9297, 0.9363] | 27.1 [19.9, 34.3] | 2.35 [2.13, 2.56] | 17.4 [15.2, 19.6] | 0.44 [0.22, 0.66] | 129.5 [126.1, 133.0] | 13.8 | 0.45 | 3 | 0.5 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 2 | 0.9299 [0.9265, 0.9332] | 23.7 [16.3, 31.2] | 2.42 [2.21, 2.64] | 18.4 [16.3, 20.6] | 0.47 [0.25, 0.68] | 129.5 [126.1, 133.0] | 13.8 | 0.45 | 3 | 0.5 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 4 | 0.9248 [0.9211, 0.9284] | 18.3 [10.5, 26.0] | 2.54 [2.31, 2.78] | 20.3 [18.0, 22.6] | 0.53 [0.28, 0.77] | 129.5 [126.1, 133.0] | 13.8 | 0.45 | 3 | 0.4 |
+| Central annealing, budget of 'Distributed, 1 sub-round per slot', delay 8 | 0.9188 [0.9147, 0.9229] | 12.0 [4.1, 20.0] | 2.68 [2.41, 2.94] | 23.4 [20.8, 25.9] | 0.77 [0.49, 1.04] | 129.5 [126.1, 133.0] | 13.7 | 0.44 | 3 | 0.4 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 0 | 0.9552 [0.9537, 0.9568] | 51.1 [46.3, 55.9] | 2.01 [1.85, 2.17] | 12.4 [11.1, 13.8] | 0.26 [0.05, 0.47] | 129.3 [126.0, 132.7] | 13.3 | 0.89 | 6 | 0.9 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 1 | 0.9492 [0.9475, 0.9510] | 44.5 [39.1, 50.0] | 2.14 [1.97, 2.30] | 13.9 [12.4, 15.4] | 0.36 [0.09, 0.63] | 129.3 [126.0, 132.7] | 13.3 | 0.88 | 6 | 0.9 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 2 | 0.9435 [0.9416, 0.9454] | 38.3 [32.3, 44.3] | 2.28 [2.10, 2.45] | 15.3 [13.7, 16.8] | 0.43 [0.13, 0.73] | 129.3 [126.0, 132.7] | 13.3 | 0.88 | 6 | 0.9 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 4 | 0.9338 [0.9317, 0.9360] | 27.8 [20.8, 34.7] | 2.50 [2.31, 2.68] | 18.6 [16.7, 20.5] | 0.58 [0.28, 0.89] | 129.3 [126.0, 132.7] | 13.3 | 0.87 | 6 | 0.9 |
+| Central annealing, budget of 'Distributed, 2 sub-rounds per slot', delay 8 | 0.9219 [0.9193, 0.9246] | 14.9 [6.7, 23.0] | 2.77 [2.55, 2.99] | 24.1 [21.7, 26.6] | 0.91 [0.47, 1.35] | 129.3 [126.0, 132.7] | 13.2 | 0.85 | 6 | 0.9 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 0 | 0.9833 [0.9824, 0.9841] | 81.8 [79.9, 83.7] | 1.74 [1.60, 1.89] | 9.5 [8.4, 10.6] | 0.08 [0.00, 0.19] | 129.4 [126.0, 132.7] | 12.4 | 1.95 | 25 | 1.9 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 1 | 0.9748 [0.9737, 0.9760] | 72.6 [69.7, 75.4] | 1.89 [1.74, 2.04] | 11.1 [9.8, 12.5] | 0.16 [0.02, 0.29] | 129.4 [126.0, 132.7] | 12.4 | 1.94 | 25 | 1.9 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 2 | 0.9658 [0.9644, 0.9672] | 62.6 [58.7, 66.5] | 2.08 [1.93, 2.23] | 12.8 [11.4, 14.2] | 0.22 [0.08, 0.37] | 129.4 [126.0, 132.7] | 12.4 | 1.93 | 25 | 1.9 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 4 | 0.9486 [0.9468, 0.9505] | 44.0 [38.4, 49.6] | 2.55 [2.35, 2.75] | 16.8 [15.0, 18.7] | 0.34 [0.20, 0.47] | 129.4 [126.0, 132.7] | 12.4 | 1.92 | 25 | 1.9 |
+| Central annealing, budget of 'Distributed, 8 sub-rounds per slot', delay 8 | 0.9271 [0.9249, 0.9292] | 20.5 [12.9, 28.1] | 3.17 [2.89, 3.46] | 26.0 [23.6, 28.4] | 0.59 [0.39, 0.79] | 129.3 [126.0, 132.7] | 12.4 | 1.88 | 25 | 1.9 |
+| Central greedy from scratch, delay 0 | 0.9956 [0.9951, 0.9961] | 95.2 [94.5, 95.9] | 1.67 [1.52, 1.82] | 8.9 [7.7, 10.1] | 0.27 [0.09, 0.45] | 129.1 [125.7, 132.4] | 11.5 | 4.19 | 652 | 4.2 |
+| Central greedy from scratch, delay 1 | 0.9872 [0.9866, 0.9879] | 86.0 [84.5, 87.5] | 1.82 [1.67, 1.98] | 11.0 [9.5, 12.5] | 0.33 [0.13, 0.52] | 129.1 [125.7, 132.4] | 11.5 | 4.17 | 652 | 4.2 |
+| Central greedy from scratch, delay 2 | 0.9773 [0.9764, 0.9781] | 75.1 [72.4, 77.8] | 2.02 [1.87, 2.18] | 12.9 [11.2, 14.7] | 0.40 [0.18, 0.62] | 129.1 [125.7, 132.4] | 11.5 | 4.16 | 652 | 4.2 |
+| Central greedy from scratch, delay 4 | 0.9560 [0.9545, 0.9574] | 51.8 [46.7, 56.9] | 2.58 [2.40, 2.77] | 17.4 [15.5, 19.3] | 0.49 [0.26, 0.73] | 129.1 [125.7, 132.4] | 11.5 | 4.13 | 652 | 4.1 |
+| Central greedy from scratch, delay 8 | 0.9288 [0.9267, 0.9309] | 22.3 [14.8, 29.9] | 3.49 [3.20, 3.77] | 29.0 [25.9, 32.1] | 0.73 [0.51, 0.95] | 129.1 [125.7, 132.4] | 11.5 | 4.05 | 652 | 4.1 |
+| Periodic re-optimisation (reference solver) | 0.9355 [0.9328, 0.9382] | 29.5 [22.1, 37.0] | 3.21 [2.92, 3.51] | 29.1 [25.3, 32.9] | 0.65 [0.41, 0.88] | 129.4 [126.0, 132.8] | 11.6 | 0.42 | 425 | 0.4 |
+| Static assignment (optimised at slot 0) | 0.9045 [0.8948, 0.9143] | 0.0 [0.0, 0.0] | 4.13 [3.27, 4.98] | 38.2 [29.2, 47.2] | 1.36 [0.73, 1.99] | 129.0 [125.4, 132.6] | 11.8 | 0.00 | 0 | 0.0 |
+
+Planned versus random deployment (speed 10 m/s, the same users and UAV paths; both utilities use the normalisers R_ref and S_ref of the planned deployment):
+
+| Deployment, controller | Utility (normalisers of the planned deployment) | Sum rate (bit/s/Hz) | PEB median (m) | PEB 90th percentile (m) | Target-slots without a pair (%) | Active APs | Utility / best known of the same deployment |
+|---|---|---|---|---|---|---|---|
+| Planned, reference | 0.7390 [0.7310, 0.7470] | 129.4 [126.1, 132.7] | 1.59 [1.38, 1.80] | 8.1 [6.5, 9.7] | 0.04 [0.00, 0.09] | 11.6 | 1.0000 [1.0000, 1.0000] |
+| Planned, distributed, until equilibrium | 0.7362 [0.7282, 0.7442] | 129.3 [126.0, 132.5] | 1.62 [1.41, 1.84] | 8.4 [6.7, 10.1] | 0.04 [0.00, 0.09] | 11.7 | 0.9962 [0.9957, 0.9967] |
+| Planned, static assignment | 0.6718 [0.6603, 0.6834] | 129.0 [125.4, 132.7] | 4.06 [3.16, 4.95] | 40.4 [29.2, 51.7] | 0.82 [0.19, 1.45] | 11.7 | 0.9091 [0.8962, 0.9221] |
+| Random, reference | 0.6309 [0.6130, 0.6488] | 94.4 [88.9, 99.9] | 1.56 [1.29, 1.83] | 18.1 [12.4, 23.8] | 0.10 [0.00, 0.25] | 10.4 | 1.0000 [1.0000, 1.0000] |
+| Random, distributed, until equilibrium | 0.6285 [0.6105, 0.6465] | 94.3 [88.8, 99.9] | 1.60 [1.32, 1.87] | 18.2 [12.7, 23.7] | 0.13 [0.00, 0.31] | 10.4 | 0.9961 [0.9954, 0.9969] |
+| Random, static assignment | 0.5682 [0.5427, 0.5937] | 93.6 [87.8, 99.4] | 7.19 [1.06, 13.32] | 44.5 [29.4, 59.7] | 1.24 [0.18, 2.31] | 10.3 | 0.8996 [0.8757, 0.9236] |
+
+## E11 locality and scaling (`e11_locality.json`)
+
+Static snapshots of planned deployments, 20 scenarios; c_tx = 0.016, c_rx = 0.008.  Scaled load: 15 D / 24 users and D / 6 UAVs; fixed load: 15 users and 4 UAVs.  Cold start: all APs off.  'Best known' includes the reference solver.  Evaluations to 99% are means over the runs that reach the level.
+
+Scaled load: interaction graph.
+
+| D | Links kept | Users / UAVs | Density of the graph | Mean degree | Colours (greedy colouring) | Clique found | Share of the user and target terms an AP touches (%) |
+|---|---|---|---|---|---|---|---|
+| 12 | all links | 8 / 2 | 0.853 [0.787, 0.919] | 9.4 [8.7, 10.1] | 10.3 [9.8, 10.8] | 10.3 [9.8, 10.8] | 42.5 [38.0, 47.0] |
+| 12 | clusters of 4 | 8 / 2 | 0.352 [0.325, 0.378] | 3.9 [3.6, 4.2] | 4.4 [4.2, 4.6] | 4.2 [4.0, 4.5] | 26.7 [25.3, 28.0] |
+| 12 | clusters of 8 | 8 / 2 | 0.770 [0.713, 0.826] | 8.5 [7.8, 9.1] | 9.0 [8.5, 9.5] | 9.0 [8.5, 9.5] | 39.0 [35.4, 42.6] |
+| 24 | all links | 15 / 4 | 0.966 [0.951, 0.980] | 22.2 [21.9, 22.5] | 22.4 [21.9, 23.0] | 22.4 [21.9, 23.0] | 43.7 [40.8, 46.6] |
+| 24 | clusters of 4 | 15 / 4 | 0.168 [0.157, 0.178] | 3.9 [3.6, 4.1] | 5.0 [4.8, 5.3] | 4.2 [4.0, 4.5] | 15.1 [14.8, 15.4] |
+| 24 | clusters of 8 | 15 / 4 | 0.523 [0.497, 0.550] | 12.0 [11.4, 12.6] | 10.2 [9.9, 10.6] | 9.2 [8.8, 9.6] | 26.2 [25.4, 27.1] |
+| 48 | all links | 30 / 8 | 0.993 [0.988, 0.997] | 46.7 [46.4, 46.9] | 46.8 [46.2, 47.3] | 46.7 [46.1, 47.3] | 43.0 [40.8, 45.1] |
+| 48 | clusters of 4 | 30 / 8 | 0.081 [0.078, 0.084] | 3.8 [3.6, 4.0] | 5.1 [4.8, 5.4] | 4.3 [4.0, 4.7] | 7.7 [7.6, 7.8] |
+| 48 | clusters of 8 | 30 / 8 | 0.262 [0.250, 0.273] | 12.3 [11.8, 12.8] | 11.3 [11.0, 11.7] | 8.7 [8.3, 9.1] | 14.4 [14.1, 14.7] |
+| 96 | all links | 60 / 16 | 1.000 [1.000, 1.000] | 95.0 [95.0, 95.0] | 95.7 [95.5, 95.9] | 95.7 [95.5, 95.9] | 43.6 [42.4, 44.9] |
+| 96 | clusters of 4 | 60 / 16 | 0.034 [0.033, 0.035] | 3.3 [3.2, 3.3] | 5.2 [4.9, 5.4] | 4.2 [4.0, 4.3] | 3.9 [3.8, 3.9] |
+| 96 | clusters of 8 | 60 / 16 | 0.127 [0.124, 0.130] | 12.1 [11.8, 12.4] | 11.3 [11.0, 11.7] | 8.9 [8.4, 9.5] | 7.4 [7.3, 7.5] |
+
+Scaled load: best response from all-off until the equilibrium is certified.
+
+| D | Active APs (best known) | Mode changes | Evaluations | Sub-rounds on the colouring | Cycles of colours | Terms recomputed per step: local / all |
+|---|---|---|---|---|---|---|
+| 12 | 8.2 [7.4, 8.9] | 13.3 [12.0, 14.7] | 101 [92, 110] | 29 [25, 32] | 2.77 [2.52, 3.03] | 9.5 / 30 |
+| 24 | 11.7 [11.3, 12.1] | 30.5 [28.2, 32.8] | 283 [257, 308] | 87 [79, 95] | 3.87 [3.56, 4.19] | 19.2 / 57 |
+| 48 | 13.2 [12.9, 13.6] | 47.4 [44.7, 50.1] | 595 [552, 638] | 197 [183, 211] | 4.21 [3.91, 4.50] | 37.8 / 114 |
+| 96 | 13.2 [12.7, 13.8] | 57.1 [54.2, 60.1] | 1259 [1098, 1421] | 414 [363, 466] | 4.33 [3.79, 4.86] | 77.3 / 228 |
+
+Scaled load: evaluations to reach 99% of the best known utility (annealing with 90 D evaluations).
+
+| D | Best response: final / best known | Best response: reach 99% (%) | Best response: evaluations to 99% | Greedy: final / best known | Greedy: reach 99% (%) | Greedy: evaluations to 99% | Simulated annealing: final / best known | Simulated annealing: reach 99% (%) | Simulated annealing: evaluations to 99% |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | 0.9939 [0.9880, 0.9998] | 85 | 56 [49, 63] | 0.9960 [0.9927, 0.9993] | 85 | 181 [168, 194] | 0.9979 [0.9956, 1.0001] | 90 | 168 [95, 242] |
+| 24 | 0.9950 [0.9929, 0.9972] | 95 | 156 [135, 178] | 0.9946 [0.9911, 0.9981] | 90 | 539 [503, 574] | 0.9990 [0.9982, 0.9999] | 100 | 407 [300, 515] |
+| 48 | 0.9919 [0.9889, 0.9949] | 65 | 347 [292, 403] | 0.9935 [0.9912, 0.9959] | 80 | 1314 [1188, 1440] | 0.9929 [0.9892, 0.9966] | 75 | 897 [746, 1048] |
+| 96 | 0.9872 [0.9839, 0.9905] | 45 | 904 [665, 1143] | 0.9899 [0.9880, 0.9919] | 45 | 2581 [2234, 2928] | 0.9897 [0.9871, 0.9923] | 60 | 3507 [3072, 3941] |
+
+Scaled load: best response on the clustered game (every user and UAV keeps its L strongest APs), evaluated on the full utility, and best response on the full game started from that profile.
+
+| D | L | Colours | Sub-rounds to equilibrium | Full utility / best known | Active APs | After best response on the full game | Mode changes of that step |
+|---|---|---|---|---|---|---|---|
+| 12 | 4 | 4.4 [4.2, 4.6] | 11.3 [10.1, 12.5] | 0.9861 [0.9793, 0.9930] | 8.1 [7.4, 8.7] | 0.9931 [0.9882, 0.9980] | 1.1 [0.4, 1.7] |
+| 12 | 8 | 9.0 [8.5, 9.5] | 25.9 [22.0, 29.7] | 0.9932 [0.9884, 0.9980] | 8.4 [7.6, 9.2] | 0.9940 [0.9893, 0.9988] | 0.2 [-0.1, 0.6] |
+| 24 | 4 | 5.0 [4.8, 5.3] | 13.4 [12.3, 14.6] | 0.9429 [0.9101, 0.9757] | 12.6 [11.4, 13.8] | 0.9940 [0.9913, 0.9967] | 6.3 [4.1, 8.6] |
+| 24 | 8 | 10.2 [9.9, 10.6] | 31.4 [28.6, 34.2] | 0.9874 [0.9839, 0.9910] | 12.5 [12.0, 13.0] | 0.9936 [0.9916, 0.9956] | 1.9 [1.1, 2.6] |
+| 48 | 4 | 5.1 [4.8, 5.4] | 14.8 [13.0, 16.7] | 0.8936 [0.8707, 0.9165] | 15.8 [13.7, 18.0] | 0.9912 [0.9887, 0.9936] | 17.2 [14.5, 19.9] |
+| 48 | 8 | 11.3 [11.0, 11.7] | 34.4 [31.4, 37.3] | 0.9384 [0.9259, 0.9510] | 17.3 [16.3, 18.3] | 0.9868 [0.9816, 0.9919] | 10.2 [8.1, 12.4] |
+| 96 | 4 | 5.2 [4.9, 5.4] | 12.2 [10.8, 13.5] | 0.8614 [0.8250, 0.8979] | 10.3 [8.9, 11.8] | 0.9874 [0.9842, 0.9906] | 21.4 [19.1, 23.8] |
+| 96 | 8 | 11.3 [11.0, 11.7] | 33.2 [29.6, 36.9] | 0.8900 [0.8683, 0.9117] | 15.9 [13.3, 18.6] | 0.9882 [0.9847, 0.9917] | 21.4 [18.4, 24.3] |
+
+Fixed load: interaction graph.
+
+| D | Links kept | Users / UAVs | Density of the graph | Mean degree | Colours (greedy colouring) | Clique found | Share of the user and target terms an AP touches (%) |
+|---|---|---|---|---|---|---|---|
+| 12 | all links | 15 / 4 | 0.961 [0.931, 0.990] | 10.6 [10.2, 10.9] | 11.3 [10.9, 11.7] | 11.3 [10.9, 11.7] | 44.5 [41.4, 47.7] |
+| 12 | clusters of 4 | 15 / 4 | 0.487 [0.465, 0.509] | 5.4 [5.1, 5.6] | 5.3 [5.1, 5.6] | 5.0 [4.6, 5.3] | 26.8 [25.9, 27.8] |
+| 12 | clusters of 8 | 15 / 4 | 0.905 [0.871, 0.938] | 10.0 [9.6, 10.3] | 10.4 [10.0, 10.8] | 10.4 [10.0, 10.8] | 40.3 [37.9, 42.7] |
+| 24 | all links | 15 / 4 | 0.966 [0.951, 0.980] | 22.2 [21.9, 22.5] | 22.4 [21.9, 23.0] | 22.4 [21.9, 23.0] | 43.7 [40.8, 46.6] |
+| 24 | clusters of 4 | 15 / 4 | 0.168 [0.157, 0.178] | 3.9 [3.6, 4.1] | 5.0 [4.8, 5.3] | 4.2 [4.0, 4.5] | 15.1 [14.8, 15.4] |
+| 24 | clusters of 8 | 15 / 4 | 0.523 [0.497, 0.550] | 12.0 [11.4, 12.6] | 10.2 [9.9, 10.6] | 9.2 [8.8, 9.6] | 26.2 [25.4, 27.1] |
+| 48 | all links | 15 / 4 | 0.968 [0.952, 0.983] | 45.5 [44.8, 46.2] | 44.9 [44.0, 45.8] | 44.7 [43.7, 45.7] | 43.0 [40.1, 45.8] |
+| 48 | clusters of 4 | 15 / 4 | 0.055 [0.052, 0.057] | 2.6 [2.4, 2.7] | 4.5 [4.2, 4.7] | 4.2 [4.0, 4.4] | 7.8 [7.6, 7.9] |
+| 48 | clusters of 8 | 15 / 4 | 0.189 [0.181, 0.198] | 8.9 [8.5, 9.3] | 9.8 [9.4, 10.3] | 8.6 [8.1, 9.0] | 14.4 [14.1, 14.7] |
+| 96 | all links | 15 / 4 | 0.975 [0.962, 0.987] | 92.6 [91.4, 93.8] | 90.5 [88.8, 92.1] | 90.1 [88.2, 92.0] | 43.1 [40.2, 46.0] |
+| 96 | clusters of 4 | 15 / 4 | 0.015 [0.015, 0.016] | 1.5 [1.4, 1.5] | 4.1 [4.0, 4.2] | 4.0 [4.0, 4.0] | 3.9 [3.8, 4.0] |
+| 96 | clusters of 8 | 15 / 4 | 0.062 [0.059, 0.065] | 5.9 [5.6, 6.2] | 9.0 [8.6, 9.4] | 8.3 [7.9, 8.7] | 7.4 [7.3, 7.6] |
+
+Fixed load: best response from all-off until the equilibrium is certified.
+
+| D | Active APs (best known) | Mode changes | Evaluations | Sub-rounds on the colouring | Cycles of colours | Terms recomputed per step: local / all |
+|---|---|---|---|---|---|---|
+| 12 | 9.8 [9.4, 10.3] | 15.3 [14.3, 16.4] | 108 [96, 121] | 33 [29, 37] | 2.91 [2.58, 3.23] | 19.4 / 57 |
+| 24 | 11.7 [11.3, 12.1] | 30.5 [28.2, 32.8] | 283 [257, 308] | 87 [79, 95] | 3.87 [3.56, 4.19] | 19.2 / 57 |
+| 48 | 12.1 [11.6, 12.6] | 44.9 [41.6, 48.2] | 560 [522, 598] | 170 [148, 191] | 3.78 [3.31, 4.24] | 19.0 / 57 |
+| 96 | 12.2 [11.8, 12.6] | 55.8 [51.9, 59.6] | 1073 [974, 1171] | 361 [320, 402] | 4.00 [3.53, 4.48] | 19.2 / 57 |
+
+Fixed load: evaluations to reach 99% of the best known utility (annealing with 90 D evaluations).
+
+| D | Best response: final / best known | Best response: reach 99% (%) | Best response: evaluations to 99% | Greedy: final / best known | Greedy: reach 99% (%) | Greedy: evaluations to 99% | Simulated annealing: final / best known | Simulated annealing: reach 99% (%) | Simulated annealing: evaluations to 99% |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | 0.9921 [0.9877, 0.9965] | 65 | 65 [46, 83] | 0.9955 [0.9913, 0.9996] | 80 | 216 [205, 227] | 0.9987 [0.9969, 1.0004] | 90 | 107 [82, 131] |
+| 24 | 0.9950 [0.9929, 0.9972] | 95 | 156 [135, 178] | 0.9946 [0.9911, 0.9981] | 90 | 539 [503, 574] | 0.9990 [0.9982, 0.9999] | 100 | 407 [300, 515] |
+| 48 | 0.9909 [0.9878, 0.9940] | 65 | 323 [290, 356] | 0.9910 [0.9841, 0.9979] | 75 | 1126 [1035, 1217] | 0.9942 [0.9915, 0.9970] | 90 | 839 [675, 1003] |
+| 96 | 0.9885 [0.9846, 0.9924] | 50 | 753 [608, 898] | 0.9898 [0.9829, 0.9968] | 70 | 2359 [2086, 2632] | 0.9913 [0.9879, 0.9946] | 70 | 3053 [2762, 3344] |
+
+Fixed load: best response on the clustered game (every user and UAV keeps its L strongest APs), evaluated on the full utility, and best response on the full game started from that profile.
+
+| D | L | Colours | Sub-rounds to equilibrium | Full utility / best known | Active APs | After best response on the full game | Mode changes of that step |
+|---|---|---|---|---|---|---|---|
+| 12 | 4 | 5.3 [5.1, 5.6] | 14.4 [13.1, 15.7] | 0.9823 [0.9753, 0.9892] | 10.3 [9.8, 10.8] | 0.9974 [0.9954, 0.9994] | 2.5 [1.5, 3.4] |
+| 12 | 8 | 10.4 [10.0, 10.8] | 28.6 [24.7, 32.6] | 0.9943 [0.9899, 0.9988] | 10.0 [9.5, 10.5] | 0.9946 [0.9902, 0.9990] | 0.2 [0.0, 0.4] |
+| 24 | 4 | 5.0 [4.8, 5.3] | 13.4 [12.3, 14.6] | 0.9429 [0.9101, 0.9757] | 12.6 [11.4, 13.8] | 0.9940 [0.9913, 0.9967] | 6.3 [4.1, 8.6] |
+| 24 | 8 | 10.2 [9.9, 10.6] | 31.4 [28.6, 34.2] | 0.9874 [0.9839, 0.9910] | 12.5 [12.0, 13.0] | 0.9936 [0.9916, 0.9956] | 1.9 [1.1, 2.6] |
+| 48 | 4 | 4.5 [4.2, 4.7] | 10.8 [9.6, 12.1] | 0.8477 [0.7899, 0.9056] | 10.2 [8.5, 11.9] | 0.9916 [0.9887, 0.9946] | 16.0 [12.1, 19.9] |
+| 48 | 8 | 9.8 [9.4, 10.3] | 27.6 [24.7, 30.5] | 0.9619 [0.9460, 0.9778] | 13.4 [12.4, 14.4] | 0.9937 [0.9914, 0.9960] | 6.4 [4.6, 8.2] |
+| 96 | 4 | 4.1 [4.0, 4.2] | 8.6 [7.5, 9.7] | 0.7375 [0.6632, 0.8118] | 8.6 [6.8, 10.4] | 0.9910 [0.9875, 0.9945] | 25.4 [20.2, 30.5] |
+| 96 | 8 | 9.0 [8.6, 9.4] | 24.2 [21.1, 27.4] | 0.8537 [0.8081, 0.8993] | 10.6 [9.2, 12.0] | 0.9886 [0.9841, 0.9931] | 16.9 [13.3, 20.5] |
+
+## E12 failures (`e12_failures.json`)
+
+D = 24 APs at the reference equilibrium of a static snapshot, 20 scenarios, 3 draws of the failed APs each; f active APs fail.  Ratios are to the best utility known after the failure.  PEB: median over the UAVs of the snapshot.  Messages: as in E10.
+
+f = 1 failed AP(s):
+
+| State | Utility / best known after the failure | Utility / utility before the failure | PEB (m) | Active APs | APs allowed to move | APs that changed mode | Evaluations | Messages |
+|---|---|---|---|---|---|---|---|---|
+| Before the failure | - | 1.0000 [1.0000, 1.0000] | 7.39 [1.77, 13.01] | 11.7 [11.2, 12.1] | - | - | - | - |
+| After the failure, no repair | 0.9853 [0.9797, 0.9910] | 0.9728 [0.9662, 0.9793] | 10.97 [4.35, 17.60] | 10.7 [10.2, 11.1] | 0.0 | 0.00 | 0 | 0.0 |
+| Best response of the 1-hop neighbours of the failed APs | 0.9990 [0.9983, 0.9996] | 0.9862 [0.9825, 0.9899] | 9.05 [3.19, 14.91] | 11.3 [10.8, 11.8] | 22.5 | 1.13 | 120 | 45.9 |
+| Best response of the 2-hop neighbours | 0.9990 [0.9983, 0.9996] | 0.9862 [0.9825, 0.9899] | 9.05 [3.19, 14.91] | 11.3 [10.8, 11.8] | 22.9 | 1.13 | 122 | 45.9 |
+| Best response of the neighbours in the graph of clusters of 4 | 0.9983 [0.9973, 0.9994] | 0.9856 [0.9817, 0.9895] | 9.78 [3.41, 16.15] | 11.3 [10.8, 11.8] | 4.5 | 0.87 | 22 | 28.4 |
+| Best response of the neighbours in the graph of clusters of 8 | 0.9989 [0.9982, 0.9997] | 0.9862 [0.9825, 0.9899] | 8.99 [3.16, 14.81] | 11.3 [10.8, 11.8] | 12.5 | 1.07 | 65 | 43.0 |
+| Best response of all APs | 0.9990 [0.9983, 0.9996] | 0.9862 [0.9825, 0.9899] | 9.05 [3.19, 14.91] | 11.3 [10.8, 11.8] | 23.0 | 1.13 | 122 | 45.9 |
+| Central annealing, evaluations of the row above | 0.9983 [0.9975, 0.9991] | 0.9855 [0.9819, 0.9892] | 9.03 [3.18, 14.88] | 11.3 [10.9, 11.8] | 23.0 | 1.18 | 122 | 1.2 |
+| Central greedy from scratch | 0.9953 [0.9929, 0.9976] | 0.9826 [0.9781, 0.9870] | 9.34 [3.63, 15.06] | 11.4 [11.0, 11.9] | 23.0 | 3.97 | 629 | 4.0 |
+
+f = 2 failed AP(s):
+
+| State | Utility / best known after the failure | Utility / utility before the failure | PEB (m) | Active APs | APs allowed to move | APs that changed mode | Evaluations | Messages |
+|---|---|---|---|---|---|---|---|---|
+| Before the failure | - | 1.0000 [1.0000, 1.0000] | 7.39 [1.77, 13.01] | 11.7 [11.2, 12.1] | - | - | - | - |
+| After the failure, no repair | 0.9548 [0.9416, 0.9681] | 0.9245 [0.9054, 0.9436] | 16.27 [8.23, 24.31] | 9.7 [9.2, 10.1] | 0.0 | 0.00 | 0 | 0.0 |
+| Best response of the 1-hop neighbours of the failed APs | 0.9955 [0.9941, 0.9970] | 0.9635 [0.9541, 0.9729] | 11.46 [4.60, 18.33] | 11.2 [10.8, 11.6] | 21.8 | 2.83 | 149 | 98.3 |
+| Best response of the 2-hop neighbours | 0.9955 [0.9941, 0.9970] | 0.9635 [0.9541, 0.9729] | 11.46 [4.60, 18.33] | 11.2 [10.8, 11.6] | 21.9 | 2.83 | 149 | 98.3 |
+| Best response of the neighbours in the graph of clusters of 4 | 0.9940 [0.9916, 0.9965] | 0.9620 [0.9527, 0.9713] | 11.67 [4.82, 18.52] | 11.1 [10.6, 11.5] | 7.6 | 1.93 | 46 | 64.3 |
+| Best response of the neighbours in the graph of clusters of 8 | 0.9955 [0.9940, 0.9969] | 0.9634 [0.9539, 0.9729] | 11.42 [4.52, 18.33] | 11.2 [10.8, 11.6] | 16.2 | 2.63 | 108 | 93.3 |
+| Best response of all APs | 0.9955 [0.9941, 0.9970] | 0.9635 [0.9541, 0.9729] | 11.46 [4.60, 18.33] | 11.2 [10.8, 11.6] | 22.0 | 2.83 | 150 | 98.3 |
+| Central annealing, evaluations of the row above | 0.9948 [0.9934, 0.9963] | 0.9628 [0.9533, 0.9724] | 10.79 [4.27, 17.31] | 11.3 [10.9, 11.8] | 22.0 | 2.93 | 150 | 2.9 |
+| Central greedy from scratch | 0.9947 [0.9920, 0.9974] | 0.9627 [0.9525, 0.9729] | 11.14 [4.46, 17.81] | 11.0 [10.7, 11.4] | 22.0 | 4.78 | 582 | 4.8 |
+
+f = 4 failed AP(s):
+
+| State | Utility / best known after the failure | Utility / utility before the failure | PEB (m) | Active APs | APs allowed to move | APs that changed mode | Evaluations | Messages |
+|---|---|---|---|---|---|---|---|---|
+| Before the failure | - | 1.0000 [1.0000, 1.0000] | 7.39 [1.77, 13.01] | 11.7 [11.2, 12.1] | - | - | - | - |
+| After the failure, no repair | 0.8966 [0.8700, 0.9233] | 0.8400 [0.8081, 0.8718] | 32.39 [19.55, 45.23] | 7.7 [7.2, 8.1] | 0.0 | 0.00 | 0 | 0.0 |
+| Best response of the 1-hop neighbours of the failed APs | 0.9952 [0.9935, 0.9969] | 0.9314 [0.9201, 0.9428] | 12.92 [5.01, 20.83] | 10.7 [10.3, 11.1] | 19.9 | 4.18 | 153 | 150.7 |
+| Best response of the 2-hop neighbours | 0.9952 [0.9935, 0.9969] | 0.9314 [0.9201, 0.9428] | 12.92 [5.01, 20.83] | 10.7 [10.3, 11.1] | 19.9 | 4.18 | 153 | 150.7 |
+| Best response of the neighbours in the graph of clusters of 4 | 0.9922 [0.9891, 0.9953] | 0.9287 [0.9154, 0.9419] | 14.92 [6.25, 23.59] | 10.4 [10.0, 10.9] | 10.9 | 3.43 | 80 | 109.3 |
+| Best response of the neighbours in the graph of clusters of 8 | 0.9950 [0.9933, 0.9967] | 0.9312 [0.9198, 0.9426] | 13.26 [5.21, 21.31] | 10.7 [10.3, 11.1] | 17.6 | 4.12 | 133 | 142.8 |
+| Best response of all APs | 0.9952 [0.9935, 0.9969] | 0.9314 [0.9201, 0.9428] | 12.92 [5.01, 20.83] | 10.7 [10.3, 11.1] | 20.0 | 4.18 | 154 | 150.7 |
+| Central annealing, evaluations of the row above | 0.9933 [0.9894, 0.9972] | 0.9297 [0.9165, 0.9430] | 13.39 [5.45, 21.32] | 10.8 [10.4, 11.2] | 20.0 | 4.40 | 154 | 4.4 |
+| Central greedy from scratch | 0.9948 [0.9917, 0.9978] | 0.9311 [0.9192, 0.9429] | 13.81 [5.60, 22.01] | 10.6 [10.2, 11.1] | 20.0 | 5.52 | 503 | 5.5 |
+
+## Tuning of the operation study (`tuning_operation.json`)
+
+Tuning scenarios [1000, 1001, 1002, 1003, 1004].  Costs: start values c_tx = 0.004, c_rx = 0.002, both multiplied by one factor; D = 24 APs, reference solver at slots [0, 60, 120, 180]; the factor whose mean number of active APs is closest to 12 is selected (equal to the settings used: yes).
+
+| Factor | c_tx / c_rx | Active APs | Transmitters | Receivers | Utility | Selected |
+|---|---|---|---|---|---|---|
+| 0 | 0 / 0 | 23.90 [23.73, 24.07] | 16.6 [15.9, 17.2] | 7.3 [6.7, 8.0] | 0.941 [0.898, 0.984] |  |
+| 0.5 | 0.002 / 0.001 | 21.90 [20.50, 23.30] | 13.8 [12.3, 15.2] | 8.2 [7.3, 9.0] | 0.903 [0.859, 0.947] |  |
+| 1 | 0.004 / 0.002 | 19.70 [18.73, 20.67] | 12.7 [11.7, 13.7] | 7.0 [6.6, 7.4] | 0.869 [0.824, 0.914] |  |
+| 2 | 0.008 / 0.004 | 16.60 [15.24, 17.96] | 10.2 [9.4, 10.9] | 6.5 [5.6, 7.3] | 0.811 [0.763, 0.859] |  |
+| 3 | 0.012 / 0.006 | 13.50 [12.71, 14.29] | 8.0 [7.3, 8.7] | 5.5 [5.1, 5.9] | 0.763 [0.712, 0.814] |  |
+| 4 | 0.016 / 0.008 | 11.65 [10.61, 12.69] | 6.8 [5.6, 7.9] | 4.9 [4.7, 5.1] | 0.724 [0.671, 0.777] | yes |
+| 5 | 0.02 / 0.01 | 10.40 [9.40, 11.40] | 5.8 [4.8, 6.8] | 4.6 [4.4, 4.8] | 0.690 [0.635, 0.745] |  |
+| 6 | 0.024 / 0.012 | 9.60 [8.71, 10.49] | 5.2 [4.5, 6.0] | 4.3 [4.1, 4.6] | 0.658 [0.601, 0.714] |  |
+| 8 | 0.032 / 0.016 | 8.20 [7.56, 8.84] | 4.3 [3.9, 4.8] | 3.9 [3.7, 4.0] | 0.603 [0.545, 0.662] |  |
+
+Grids of the stochastic methods (mean ratio to the best known utility over the tuning scenarios; the grid point with the largest mean, rounded to four decimals, is selected):
+
+| Method | Grid points | Selected grid point | Mean ratio | Equal to the settings used |
+|---|---|---|---|---|
+| Simulated annealing, cold start, instances of E9 | 23 | {'t_start': 0.01, 't_end': 0.001, 'cooling_fraction': 1.0} | 0.9999 | yes |
+| Log-linear learning, instances of E9 | 12 | {'tau_start': 0.01, 'tau_end': 0.001, 'fraction': 0.5} | 0.9959 | yes |
+| Temperature of the warm-started online annealing (E10, E12) | 6 | 0.001 | 0.9963 | yes |
+| Simulated annealing, cold start, E11 with D = 12 | 23 | {'t_start': 0.01, 't_end': 0.001, 'cooling_fraction': 0.5} | 0.9997 | yes |
+| Simulated annealing, cold start, E11 with D = 24 | 23 | {'t_start': 0.003, 't_end': 0.001, 'cooling_fraction': 0.5} | 0.9994 | yes |
+| Simulated annealing, cold start, E11 with D = 48 | 23 | {'t_start': 0.003, 't_end': 1e-05, 'cooling_fraction': 1.0} | 0.9990 | yes |
+| Simulated annealing, cold start, E11 with D = 96 | 23 | {'t_start': 0.03, 't_end': 0.0001, 'cooling_fraction': 0.5} | 0.9958 | yes |

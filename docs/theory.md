@@ -3,10 +3,12 @@
 This note states the structural results used in the repository, proves them, and records what
 the numerical checks show. Statements that hold only for a part of the objective are marked
 as such. Numbers come from the result files named next to them (`results/tables.md` collects
-them); the tests in `tests/test_propositions.py` check every proposition exhaustively on
-small random instances.
+them); the tests in `tests/test_propositions.py` (Part I) and `tests/test_propositions_op.py`
+(Part II) check every proposition exhaustively on small random instances.
 
 Contents
+
+Part I: placement of the access points (Propositions 1-5, experiments E1-E7)
 
 1. [Setting](#1-setting)
 2. [Proposition 1: the team game is an exact potential game](#2-proposition-1-the-team-game-is-an-exact-potential-game)
@@ -17,6 +19,17 @@ Contents
 7. [What holds for the utility that is optimised](#7-what-holds-for-the-utility-that-is-optimised)
 8. [Remarks](#8-remarks)
 9. [References](#9-references)
+
+Part II: operation of the deployed network (Propositions 6-9, experiments E8-E12)
+
+10. [Setting of the mode-selection game](#10-setting-of-the-mode-selection-game)
+11. [Physical scale of the sensing information](#11-physical-scale-of-the-sensing-information)
+12. [Proposition 6: the mode game is an exact potential game](#12-proposition-6-the-mode-game-is-an-exact-potential-game)
+13. [Proposition 7: locality](#13-proposition-7-locality)
+14. [Proposition 8: parallel moves](#14-proposition-8-parallel-moves)
+15. [Proposition 9: structure and coordination failures](#15-proposition-9-structure-and-coordination-failures)
+16. [What the numbers show](#16-what-the-numbers-show)
+17. [References of Part II](#17-references-of-part-ii)
 
 ## 1. Setting
 
@@ -448,3 +461,402 @@ the best utility found by any method (`results/tables.md`, section E3).
 * A. A. Bian, J. M. Buhmann, A. Krause and S. Tschiatschek, "Guarantees for greedy
   maximization of non-submodular functions with applications", Proc. 34th International
   Conference on Machine Learning (ICML), 2017.
+
+---
+
+# Part II: operation of the deployed network
+
+Part I places the access points once. Part II takes a deployment as given and studies the
+repeated decision of every deployed access point to transmit, to receive or to stay off,
+with sensing links that are blocked by the buildings of the scene. The code is in
+`cfisac_ma/aerial.py` (line of sight, physical scale) and `cfisac_ma/operation.py` (the
+game and the methods); the experiments are E8-E12 (`cfisac_ma/experiments_op.py`).
+
+## 10. Setting of the mode-selection game
+
+**Players and modes.** `D` access points are deployed on valid candidate sites. In a slot,
+access point `i` chooses a mode `a_i` in `{off, tx, rx}` (half-duplex). A profile
+`a = (a_1, ..., a_D)` defines the transmit set `T(a) = {i : a_i = tx}` and the receive set
+`R(a) = {i : a_i = rx}`; the two are disjoint. There are `3^D` profiles.
+
+**Communication.** As in Section 1 with the deployed access points in place of the sites:
+user `k` has the rate `r_k(T) = log2(1 + x_k(T))`, `x_k(T) = sum_{i in T} s_{i,k}`,
+`s_{i,k} = rho * beta_{i,k} >= 0` (ray-traced path gain, 0 if below -110 dB), and
+`R(T) = sum_k r_k(T)`. Only transmitters serve users.
+
+**Blockage-aware sensing.** Target `q` is at the position `p_q`, on one of the flight levels
+10, 20, 30, 40 m. Access point `i` has the free-space gain `w_i(q) > 0` and the unit vector
+`u_i(q)` of Section 1, and the line-of-sight indicator `v_i(q)` in `{0, 1}`: the entry of the
+table `data/aerial_los.npz` for the site of `i`, the flight level of `p_q` and the grid cell
+that contains `p_q` (the table holds exact visibility tests between the site and the centre
+of that cell). The information matrix of the target is
+
+    J_q(T, R) = sum_{m in T} sum_{n in R} v_m v_n w_m w_n (u_m + u_n)(u_m + u_n)^T ,
+
+i.e. the split-role matrix of Section 1 with the weights `v w` in place of `w`: a pair
+contributes only if both its transmitter and its receiver see the target. With the ten
+numbers `f_i(q) = v_i w_i (1, u_i, u_i u_i^T)` per access point (a scalar, a vector and a
+symmetric 3 x 3 matrix) and their sums over a role, `F^T_q = (W^T, b^T, A^T)` and
+`F^R_q = (W^R, b^R, A^R)`,
+
+    J_q(T, R) = W^R A^T + W^T A^R + b^T (b^R)^T + b^R (b^T)^T .
+
+The sensing value of the target is
+
+    s_q(T, R) = log det(J_q(T, R) + eps I) - 3 log eps >= 0 ,
+
+which is 0 exactly if `J_q = 0`, i.e. if no transmitter-receiver pair sees the target.
+
+**Team utility.**
+
+    U(a) = lam * R(T) / R_ref + (1 - lam) * (1 / Q) sum_q s_q(T, R) / S_ref - c_tx |T| - c_rx |R| ,
+
+with `Q` targets, costs `c_tx, c_rx >= 0` of an active access point, and two positive
+constants of the scenario: `R_ref = R(all deployed access points transmit)` and `S_ref`, the
+mean over the planning points of the blockage-aware joint-role sensing value of all deployed
+access points (Section 1 with the weights `v w`). `U(all off) = 0`. The costs make `U`
+non-monotone: an access point that adds little is better off.
+
+**Placement with blockage.** The same masking is available for the placement problem of
+Part I (`make_problem(..., blockage=...)`): `w_m(p)` is replaced by `v_m(p) w_m(p)` for every
+site and target point. Propositions 1-5 use only `w >= 0`, so they hold unchanged; a target
+point that no site sees contributes the constant `log det(eps I)`. E1-E7 use the default
+without blockage.
+
+## 11. Physical scale of the sensing information
+
+The simulator multiplies the product of two free-space gains by `1e20`
+(`simulation/isac_env.py`). This section gives that factor a unit.
+
+**Bistatic range.** A transmitter at `t_m` and a receiver at `r_n` measure the bistatic range
+`rho_{mn}(p) = |p - t_m| + |p - r_n|` of a target at `p`. Its gradient with respect to `p` is
+`(p - t_m) / |p - t_m| + (p - r_n) / |p - r_n| = u_m + u_n`. For a measurement with Gaussian
+error of variance `sigma_r^2` the Fisher information about `p` is therefore
+`(u_m + u_n)(u_m + u_n)^T / sigma_r^2`: the pair matrix of the simulator is the information
+direction of a bistatic range measurement.
+
+**Range variance.** The Cramér-Rao bound of a delay estimate is
+`1 / (8 pi^2 beta^2 SNR)` with the RMS bandwidth `beta` of the waveform and `SNR` the ratio of
+received energy to noise spectral density (Kay, 1993); for a flat spectrum of width `B`,
+`beta = B / sqrt(12)`. The range is `c` times the delay, so
+`sigma_r^2 = c^2 / (8 pi^2 beta^2 SNR)`.
+
+**Radar SNR.** With transmit power `P`, isotropic antennas, radar cross-section `sigma_rcs`,
+wavelength `lambda`, noise spectral density `N0` and a processing gain `G_p` (the
+time-bandwidth product of the coherent integration), the bistatic radar equation gives
+
+    SNR = P sigma_rcs (4 pi / lambda^2) g_m g_n G_p / (N0 B) ,      g = (lambda / (4 pi d))^2 ,
+
+where `g_m`, `g_n` are the free-space gains of the two legs, exactly the gains the simulator
+uses (`P lambda^2 sigma_rcs / ((4 pi)^3 d_m^2 d_n^2)` is the received power; the factor
+`4 pi / lambda^2` converts the product of two Friis gains into it).
+
+**Result.** Summing the independent pairs,
+
+    J_phys = kappa * sum_{m, n} g_m g_n (u_m + u_n)(u_m + u_n)^T ,
+    kappa  = (8 pi^2 beta^2 / c^2) * P sigma_rcs 4 pi G_p / (lambda^2 N0 B)      [1 / m^2] .
+
+For 28 GHz (`lambda = 10.71 mm` with the simulator's `c = 3e8 m/s`), `P = 1 W`,
+`sigma_rcs = 0.1 m^2`, `B = 100 MHz` (`beta = 28.87 MHz`, `8 pi^2 beta^2 / c^2 = 0.7311 m^-2`),
+a noise figure of 7 dB at 290 K (`N0 = 2.007e-20 W/Hz`) and `G_p = 44 dB`,
+`kappa = 1.0018e20` (`cfisac_ma.aerial.sensing_scale`). The value `1e20` is obtained for
+`G_p = 43.992 dB`, a time-bandwidth product of 25,074, i.e. 0.2507 ms of coherent
+integration at 100 MHz (`processing_gain_db_for_scale`). With this parameter set the matrices
+`J` of this repository are Fisher information matrices in `1 / m^2`, and `eps = 1e-4` is the
+information of a Gaussian prior with a standard deviation of `1 / sqrt(eps) = 100 m` per axis.
+
+**Position error bound.** With a prior of information `eps I`, the Bayesian information is
+`J + eps I` (Van Trees, 1968) and
+
+    PEB = sqrt(trace((J + eps I)^{-1}))      [m]
+
+bounds the root-mean-square position error. Without any information it equals
+`sqrt(3 / eps) = 173.2 m`; one transmitter-receiver pair lowers it along one direction only.
+The experiments of Part II report this bound (`cfisac_ma.aerial.position_error_bound`).
+The parameter set is one consistent reading of the simulator's constant, not a calibrated
+link budget: other combinations of power, cross-section and integration time give the same
+`kappa`, and `kappa` scales the bound by `1 / sqrt(kappa)` wherever the prior does not
+dominate.
+
+**Numerical check** (`tests/test_aerial.py`).
+`test_pair_matrix_is_the_gradient_of_the_bistatic_range` compares `u_m + u_n` with a numerical
+gradient; `test_sensing_scale_of_the_simulator` recomputes `kappa` from the constants above
+(`1.0018e20`) and the processing gain for exactly `1e20` (`43.9923 dB`);
+`test_information_matrix_equals_the_range_cramer_rao_bound` builds
+`(u_m + u_n)(u_m + u_n)^T / sigma_r^2` from the radar equation and compares it with the
+matrix of the package; `test_position_error_bound_limits` checks the value 173.2 m.
+
+## 12. Proposition 6: the mode game is an exact potential game
+
+**Statement.** In the game in which access point `i` chooses `a_i` in `{off, tx, rx}` and
+every access point's utility is `U(a)`, `U` is an exact potential, for any costs
+`c_tx, c_rx >= 0`, any weight `lam` and any positive normalisers. Every sequence of
+unilateral strict improvements is finite and ends in a pure Nash equilibrium. A maximiser of
+`U` is a pure Nash equilibrium.
+
+**Proof.** As for Proposition 1: all utilities equal `U`, so the identity
+`u_i(a_i', a_-i) - u_i(a_i, a_-i) = U(a_i', a_-i) - U(a_i, a_-i)` of an exact potential holds
+trivially. `U` increases strictly along an improvement path, so no profile repeats, and there
+are `3^D` profiles. A path can only stop where no access point has a strictly improving mode,
+and a maximiser has none. ∎
+
+The proof uses nothing about `U`. It also covers a game in which some access points are
+fixed (failed access points in E12, the agents outside a neighbourhood in a local repair):
+the remaining agents play a game with the same potential.
+
+**Implementation.** `best_response` (`cfisac_ma/operation.py`) lets the agents take turns in
+cyclic order; an agent switches to its best mode if the gain exceeds `1e-12` and the run
+stops after one full round without a switch. A step is charged 3 evaluations, one per mode.
+
+**Numerical check.** `test_p6_mode_game_is_an_exact_potential_game`: for three cost pairs
+(none, the start values, large) on random instances with 6 access points, the gain reported
+by the incremental evaluation equals the difference of `U`; sequential best response, best
+response on a colouring and best response with pair moves all end in a profile that the
+enumeration of all 729 profiles confirms as an equilibrium, with strictly increasing
+potential and fewer than `3^6` moves; the maximiser is an equilibrium. In E9 every run on
+the scene ended in an equilibrium of the enumeration (ratios in Section 16).
+
+## 13. Proposition 7: locality
+
+**Statement.** Let `K_i = {k : s_{i,k} > 0}` be the users that access point `i` reaches and
+`Q_i = {q : v_i(q) = 1}` the targets it sees.
+
+(a) `U` is a sum of terms with one aggregate argument each, minus per-agent costs:
+
+    U(a) = sum_k phi(x_k(a)) + sum_q psi(F^T_q(a), F^R_q(a)) - sum_i c(a_i) ,
+
+with `phi(x) = (lam / R_ref) log2(1 + x)`,
+`psi(F^T, F^R) = ((1 - lam) / (Q S_ref)) (log det(J(F^T, F^R) + eps I) - 3 log eps)`,
+`c(off) = 0`, `c(tx) = c_tx`, `c(rx) = c_rx`. The argument of a user term is one number, the
+argument of a target term twenty numbers (ten per role).
+
+(b) For a unilateral change of `a_i` to `a_i'`,
+
+    U(a_i', a_-i) - U(a) = sum_{k in K_i} [phi(x_k') - phi(x_k)]
+                         + sum_{q in Q_i} [psi(F^T_q', F^R_q') - psi(F^T_q, F^R_q)] - c(a_i') + c(a_i) ,
+
+where the primed aggregates differ from the unprimed ones by the access point's own
+contribution `s_{i,k}`, `f_i(q)`. The access point can therefore compute its difference
+utility for every mode exactly from the aggregates of the users in `K_i` and of the targets
+in `Q_i`; no evaluation of the global objective and no knowledge of the other users, targets
+or of the modes of access points outside its neighbourhood is needed.
+
+(c) Define the *interaction graph* `G` on the access points: `i ~ j` iff `K_i ∩ K_j` or
+`Q_i ∩ Q_j` is non-empty. The difference utility of `i` depends on `a_-i` only through the
+modes of the neighbours of `i` in `G`.
+
+**Proof.** (a) is the definition of `U` rewritten with the aggregates of Section 10. (b):
+`x_k` contains `s_{i,k}` only for `k` in `K_i` (the other `s_{i,k}` are 0), and `F^T_q`,
+`F^R_q` contain `f_i(q)` only for `q` in `Q_i` (`f_i(q) = 0` if `v_i(q) = 0`), so all other
+terms cancel in the difference. (c): `x_k` for `k` in `K_i` is a sum over the transmitters
+that reach `k`, each of which shares the user `k` with `i`; the aggregates of `q` in `Q_i`
+are sums over access points that see `q`, each of which shares the target `q` with `i`. ∎
+
+**Cost of a step.** One best-response step of `i` recomputes `2 |K_i| + 3 |Q_i|` terms (the
+user terms for the two transmit states, the target terms for the three modes), against
+`3 (K + Q)` for three evaluations of the whole objective. A central optimiser that evaluates
+single mode changes incrementally recomputes the same terms; locality is a property of the
+objective, not of who computes it.
+
+**Numerical check.** `test_p7_difference_utility_needs_only_the_agents_neighbourhood`: on
+random instances with a sparse graph the gain computed by `ModeProblem.local_gain`, an
+explicit loop over `K_i` and `Q_i`, equals the difference of two evaluations of `U`, and
+stays the same when the modes of all non-neighbours are redrawn.
+`test_incremental_evaluation_matches_direct_evaluation` (`tests/test_operation.py`) compares
+the vectorised incremental evaluation of all single and pair changes with direct evaluation.
+How local the game is on the scene is measured in E11 (Section 16).
+
+## 14. Proposition 8: parallel moves
+
+**Statement.** Let `I` be a set of access points that are pairwise non-adjacent in `G`, and
+let every `i` in `I` change its mode from `a_i` to `a_i'` at the same time. Then
+
+    U(a_I', a_-I) - U(a) = sum_{i in I} [ U(a_i', a_-i) - U(a) ] .
+
+Consequently, best response on a proper colouring of `G` (the colour classes take turns;
+all agents of the class of the current sub-round compute their best response to the same
+profile and switch simultaneously) is an improvement process: `U` increases strictly in every
+sub-round in which somebody switches, the process is finite, and it stops, after one full
+cycle of colours without a switch, at a pure Nash equilibrium.
+
+**Proof.** By Proposition 7a, `U` is a sum of user terms, target terms and agent costs. The
+term of user `k` changes only if an access point of `I` that reaches `k` changes its transmit
+state, the term of target `q` only if an access point of `I` that sees `q` changes mode. Two
+members of `I` share no user and no target, so every term is changed by at most one member
+of `I`, and for that member the change is the same as in its unilateral move (the term's
+other inputs are modes outside `I` or of members that do not enter the term). The cost terms
+are per agent. Summing the changes term by term gives the identity. In a sub-round every
+switching agent has an individual gain above the tolerance, so the sum is positive; the
+potential argument of Proposition 6 gives finiteness. If a full cycle passes without a switch,
+the profile did not change during the cycle and every agent found no improving mode against
+it. ∎
+
+**Remarks.** The identity fails for adjacent access points
+(`test_p8_additivity_fails_for_adjacent_agents`: two idle access points that see the same
+target gain nothing alone and a positive amount together). The number of sub-rounds of one
+cycle is the number of colours, at least the size of the largest clique of `G`; all access
+points that share one user or one target form a clique. Whether the colouring gives
+parallelism therefore depends on how many access points see the same target, which is
+measured in E11.
+
+**Numerical check.** `test_p8_simultaneous_moves_of_non_adjacent_agents_add_up`: on random
+sparse instances the identity holds for arbitrary simultaneous changes of every colour
+class of a greedy colouring, and `coloured_best_response` ends in an equilibrium with
+strictly increasing utility.
+
+## 15. Proposition 9: structure and coordination failures
+
+**Statement (a), communication.** `T -> R(T)` is normalised, monotone and submodular
+(Proposition 3).
+
+**Statement (b), sensing in one role.** For a fixed receive set `R`, `T -> s_q(T, R)` is
+monotone and submodular, and so is `R -> s_q(T, R)` for a fixed transmit set `T`.
+
+**Proof.** Proposition 4a with the weights `v_i(q) w_i(q) >= 0` in place of `w_i(q)`: the
+proof only uses that the matrix added by a transmitter `m`,
+`sum_{n in R} v_m v_n w_m w_n (u_m + u_n)(u_m + u_n)^T`, is positive semidefinite and does not
+depend on `T`. ∎
+
+**Statement (c), across the roles.** For `m` not in `T` and `n` not in `R`,
+
+    J_q(T + m, R + n) - J_q(T + m, R) - J_q(T, R + n) + J_q(T, R) = v_m v_n w_m w_n (u_m + u_n)(u_m + u_n)^T ,
+
+a positive semidefinite matrix: the information *matrix* that a transmitter adds grows with
+the receive set and vice versa (the roles are complements at the level of `J`). The same
+second difference of the *value* `s_q` has no fixed sign.
+
+**Proof.** `J_q` is bilinear in the indicator vectors of `T` and `R`; the second difference
+keeps the single term of the pair `(m, n)`. For the value: if `T` and `R` are empty the second
+difference is `s_q({m}, {n}) >= 0`, strictly positive if both see the target. Negative
+second differences occur as well, where the sets already give much information and the
+logarithm flattens; they are found numerically and are not characterised here. ∎
+(`test_p9_matrix_increments_are_complementary_across_roles_but_the_value_is_not` checks the
+identity and finds both signs of the scalar second difference on random instances.)
+
+**Statement (d), an equilibrium with ratio 0.** Let `lam = 0` (sensing only) and
+`c_tx, c_rx >= 0`. The profile in which every access point is off is a pure Nash equilibrium
+with `U = 0`. If some transmitter-receiver pair `(m, n)` and target `q` satisfy
+`g_q(m, n) > c_tx + c_rx`, where
+
+    g_q(m, n) = ((1 - lam) / (Q S_ref)) log(1 + v_m v_n w_m w_n |u_m + u_n|^2 / eps)
+
+is the value of the lone pair, the optimum is positive. The ratio of the equilibrium to the
+optimum is then 0, and it stays 0 when the instance is rescaled so that the optimum is
+arbitrarily large. No multiplicative guarantee for unilateral equilibria exists.
+
+**Proof.** With all access points off, a single access point that switches to `tx` or `rx`
+leaves every `J_q = 0` (the other role is empty) and `R` does not enter `U` for `lam = 0`; it
+gains `-c_tx` or `-c_rx <= 0`. The profile `{m}` transmitting, `{n}` receiving has
+`J_q = v_m v_n w_m w_n (u_m + u_n)(u_m + u_n)^T`, a rank-one matrix with the single non-zero
+eigenvalue `v_m v_n w_m w_n |u_m + u_n|^2`, so `s_q = log(1 + v_m v_n w_m w_n |u_m + u_n|^2 / eps)`
+and `U >= g_q(m, n) - c_tx - c_rx > 0`. Dividing `S_ref` by a constant multiplies the optimum
+without costs by that constant and leaves the equilibrium at 0. ∎
+
+The same failure appears for `lam > 0` whenever the rate gain of a lone transmitter is below
+`c_tx`: nobody starts transmitting, and a lone receiver has nothing to listen to.
+
+**Statement (e), pair moves.** Call a profile *pair-stable* if no single access point and no
+two access points adjacent in `G` can raise `U` by changing their modes (jointly, in the case
+of two).
+
+1. Improvement paths that also use joint moves of adjacent pairs are finite and end in a
+   pair-stable profile; a maximiser of `U` is pair-stable.
+2. A pair-stable profile is stable against joint moves of *any* two access points.
+3. In a pair-stable profile, for every target `q` without a transmitter-receiver pair in
+   line of sight and every two access points `m != n` that are both off and both see `q`,
+   `g_q(m, n) <= c_tx + c_rx`. In particular the profile of statement (d) is not
+   pair-stable.
+
+**Proof.** (1) Every accepted move raises `U`; the argument of Proposition 6 applies with the
+larger set of moves. (2) For two non-adjacent access points the gain of a joint move is the
+sum of the two unilateral gains (Proposition 8), each of which is at most 0 in an equilibrium.
+(3) Let `q` have no pair in line of sight, so `J_q(T, R) = 0`, and let `m`, `n` be off and see
+`q`; they share the target `q` and are adjacent. Consider the joint move `m -> tx`, `n -> rx`.
+`R(T + m) >= R(T)` (statement a). For every target `q'`,
+`J_{q'}(T + m, R + n) - J_{q'}(T, R)` is a sum of pair matrices, hence positive semidefinite,
+so `s_{q'}` does not decrease (lemma of Section 5). For `q` itself,
+`J_q(T + m, R + n)` dominates the pair matrix of `(m, n)` in the semidefinite order, so
+`s_q(T + m, R + n) >= log(1 + w_m w_n |u_m + u_n|^2 / eps)` while `s_q(T, R) = 0`. Hence the
+joint move changes `U` by at least `g_q(m, n) - c_tx - c_rx`, which pair-stability requires
+to be at most 0. ∎
+
+**What is not claimed.** Statement (e3) excludes one failure, the unused idle pair. It is not
+an approximation factor: access points that are busy in one role may be needed in the other,
+and with costs `U` is not monotone, so the arguments of Proposition 5 do not apply to `U`.
+No bound of the form `U(pair-stable) >= factor * OPT` is proved here; the quality of
+equilibria and of pair-stable profiles is measured in E9.
+
+**Numerical check.** `test_p9_rate_and_single_role_sensing_are_monotone_submodular`
+(exhaustive on 7 access points, both roles);
+`test_p9_all_off_is_an_equilibrium_with_ratio_zero` (all-off is an equilibrium of utility 0
+with and without costs, best response, best response on a colouring and greedy stay there,
+best response with pair moves leaves it and ends pair-stable, and dividing `S_ref` by 10
+raises the optimum above 3 while the equilibrium stays at 0);
+`test_p9_pair_stable_profiles_leave_no_profitable_idle_pair` (statement e3 for all
+pair-stable profiles of random instances with 6 access points, found by enumeration; with
+high costs the premise occurs, so the check is not vacuous);
+`test_p9_unilateral_equilibria_can_violate_the_pair_bound` (the bound fails for all-off);
+`test_equilibrium_masks_match_brute_force` (`tests/test_operation.py`: the enumeration of
+equilibria and pair-stable profiles against a direct check of all single and pair moves).
+
+## 16. What the numbers show
+
+All numbers are from `results/tables.md` (sections E9, E10, E11), computed from the files
+named there.
+
+**Propositions as stated.** Propositions 6, 7 and 8 hold as stated and no numerical check
+contradicts them. Proposition 9 holds with the wording above: the roles are complements for
+the information matrices, not for the sensing value, whose cross-role second difference
+takes both signs; and no approximation factor is claimed.
+
+**Equilibrium quality (E9).** 60 instances (8, 10 or 12 deployed access points, 15 users, 4
+targets, costs `c_tx = 0.016`, `c_rx = 0.008`), all `3^D` profiles enumerated:
+
+| Utility / optimum, with energy cost | lam = 0.5 (team utility) | lam = 0 (sensing only) | lam = 1 (sum rate only) |
+|---|---|---|---|
+| Worst Nash equilibrium | 0.9676 [0.9590, 0.9762], min 0.8613 | 0.0000 [0.0000, 0.0000], min 0.0000 | 1.0000 [0.9999, 1.0000], min 0.9988 |
+| Mean over all Nash equilibria | 0.9842 [0.9799, 0.9885] | 0.8818 [0.8686, 0.8951] | 1.0000 [1.0000, 1.0000] |
+| Worst pair-stable profile | 0.9980 [0.9968, 0.9991], min 0.9797 | 0.9882 [0.9861, 0.9903], min 0.9600 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Best response, one run (random start) | 0.9928 [0.9906, 0.9951], min 0.8959 | 0.9868 [0.9846, 0.9891], min 0.9219 | 1.0000 [0.9999, 1.0000], min 0.9988 |
+| Best response, one run (all-off start) | 0.9944 [0.9919, 0.9968], min 0.9461 | 0.0000 [0.0000, 0.0000], min 0.0000 | 1.0000 [0.9999, 1.0000], min 0.9988 |
+| Best response with pair moves, one run (all-off start) | 0.9991 [0.9984, 0.9998], min 0.9836 | 0.9968 [0.9955, 0.9981], min 0.9795 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Greedy (all-off start) | 0.9971 [0.9955, 0.9987], min 0.9622 | 0.0000 [0.0000, 0.0000], min 0.0000 | 1.0000 [1.0000, 1.0000], min 0.9995 |
+| Simulated annealing | 0.9978 [0.9965, 0.9992], min 0.9532 | 0.9944 [0.9931, 0.9958], min 0.9623 | 1.0000 [1.0000, 1.0000], min 0.9997 |
+
+* For `lam = 0.5` the worst equilibrium of an instance is on average 3.2% below the optimum
+  and 13.9% below it in the worst instance; the worst pair-stable profile is 0.2% below on
+  average and 2.0% in the worst instance. An instance has 4.10 equilibria and 1.33
+  pair-stable profiles on average.
+* For `lam = 0` the all-off equilibrium of statement (d) exists in every instance, so the
+  worst equilibrium has ratio 0; 10.1% of all equilibria have no transmitter-receiver pair
+  in line of sight of any target. Best response started from all-off and greedy (which also
+  starts from all-off and makes single changes) end there in 100% of the instances; best
+  response with pair moves never does, and no pair-stable profile is without a pair.
+* For `lam = 0.5` no equilibrium of any instance is without a pair: the rate term makes
+  access points transmit, after which receivers gain.
+
+**Locality on the scene (E11).** The interaction graph of the exact game is almost complete:
+its density is 0.966 for 24 deployed access points and 1.000 for 96 (scaled load), and a
+greedy colouring needs 22.4 and 95.7 colours. The reason is geometric: 78.0% and 82.4% of the
+site-cell pairs are in line of sight at 30 and 40 m (E8), so most access points see the same
+high targets and form one clique. Proposition 8 is correct but gives no parallelism here: a
+cycle of colours is essentially one sequential sweep. An access point touches 43.7% of the
+user and target terms (24 access points), so a best-response step recomputes about a third
+of what three global evaluations would. Restricting every user and target to its 4 or 8
+strongest access points makes the graph sparse (5.0 and 10.2 colours for 24 access points;
+4.4 to 5.2 and 9.0 to 11.3 over the sizes 12 to 96) at a cost in utility that grows with the
+size of the deployment (Section E11 of `results/tables.md`).
+
+**Consequence for the online controller (E10).** With 24 access points the graph of a slot
+needs 23.1 colours on average, so a sub-round moves about one access point, and running
+best response until an equilibrium takes 31.6 sub-rounds per slot at 10 m/s. Section E10 of
+`results/tables.md` and the README report what a controller achieves that is limited to 1,
+2 or 8 sub-rounds per slot.
+
+## 17. References of Part II
+
+* S. M. Kay, "Fundamentals of Statistical Signal Processing: Estimation Theory", Prentice
+  Hall, 1993 (Cramér-Rao bound of a time-delay estimate).
+* H. L. Van Trees, "Detection, Estimation, and Modulation Theory, Part I", Wiley, 1968
+  (Bayesian information: the information of the prior adds to the Fisher information).
+* D. Monderer and L. S. Shapley, "Potential games", Games and Economic Behavior 14 (1996).

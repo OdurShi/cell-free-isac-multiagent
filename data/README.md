@@ -1,13 +1,16 @@
 # Data
 
-The experiments E1-E7 and their figures run on the two files in this directory. The
-simulator scripts in `simulation/` read the original arrays next to them.
+The experiments E1-E7 and their figures run on the first two files in this directory;
+E8-E12 also use the line-of-sight tables. The simulator scripts in `simulation/` read the
+original arrays next to them.
 
 | File | Content |
 |---|---|
 | `pathgain_db_u16.npz` | compact path-gain database: `code` (847, 125, 125) uint16, `db_min`, `db_step` (float64 scalars), `outdoor` (125, 125) bool |
 | `candidate_positions_3d.npy` | (847, 3) float64: x, y, z in metres of the candidate access-point positions; x, y on an 11 x 11 grid over [-250, 250] m, z in {5, 10, ..., 35} m |
 | `manifest.json` | SHA-256 of the source and of the shipped files, encoding parameters, statistics and the error against the source; written by `scripts/build_database.py` |
+| `aerial_los.npz` | line-of-sight tables of the 345 valid sites to the cell centres at four flight levels and at the user height, the cells that are free at each level, the roof height at each site; see [Line-of-sight tables](#line-of-sight-tables-aerial_losnpz) |
+| `aerial_manifest.json` | SHA-256 and size of `aerial_los.npz`, SHA-256 of the path-gain database it belongs to, software versions, statistics; written by `scripts/raytrace_scene.py` |
 
 ## Origin
 
@@ -61,6 +64,58 @@ original ones, 84 cells would change; this is why the mask is stored.
 positions and the SHA-256 values of the shipped files against the manifest, and compares the
 compact database entry by entry with the simulator's array in `simulation/`.
 
+## Line-of-sight tables (`aerial_los.npz`)
+
+The path-gain database describes the links to ground users. For aerial targets the
+operation study (E8-E12) needs to know whether an access point sees a target, which the
+database does not contain. `scripts/raytrace_scene.py` (the only script of the placement
+package that needs Sionna RT, `pip install -e ".[rt]"`) loads Sionna's built-in `etoile`
+scene, the scene the database was traced on, and tests with the scene geometry
+(`mi_scene.ray_test`) whether the straight segment from a site to a point is free:
+
+```bash
+python scripts/raytrace_scene.py --los            # writes data/aerial_los.npz, data/aerial_manifest.json
+python scripts/raytrace_scene.py --check-database # writes results/e8_database_check.json
+python scripts/raytrace_scene.py --check-lookup   # writes results/e8_los_lookup_check.json
+```
+
+| Array | Shape, type | Content |
+|---|---|---|
+| `levels_m` | (4,) float64 | flight levels 10, 20, 30, 40 m |
+| `los_bits` | (4, 345, 1954) uint8 | `numpy.packbits(los, axis=-1)` of a boolean (level, valid site, 15625 cells): the site sees the centre of the cell at the flight level |
+| `ground_los_bits` | (345, 1954) uint8 | the same at the user height of 1.5 m |
+| `free` | (4, 125, 125) bool | the highest roof inside the cell is at least 2 m below the level (a UAV can be there) |
+| `site_ids` | (345,) int64 | index of each valid site among the 847 candidate positions; equal to `cfisac_ma.data.load_scene().site_ids` |
+| `site_roof_m` | (345,) float64 | height of the highest surface above the ground position of the site |
+
+Cells are numbered row-major with row = y and column = x on the 125 x 125 grid of 4 m cells
+of the path-gain database; the tested point is the cell centre. Unpack with
+`numpy.unpackbits(los_bits, axis=-1, count=15625)` or use
+`cfisac_ma.aerial.load_aerial_los()`, whose `visible(points)` looks up the table entry of the
+flight level and of the cell that contains a point. On a seeded sample of 64,000 pairs of a
+valid site and a position in a free cell, this lookup equals an exact test to the cell centre
+in every pair and an exact test to the position itself in 99.27% of the pairs
+(`results/e8_los_lookup_check.json`, `tests/test_aerial.py`).
+
+Statistics (from `aerial_manifest.json`; `tests/test_aerial.py` recomputes them from the
+file):
+
+| Quantity | 10 m | 20 m | 30 m | 40 m |
+|---|---|---|---|---|
+| Free cells (%) | 60.9 | 79.2 | 98.7 | 99.3 |
+| Site-cell pairs in line of sight, free cells (%) | 50.5 | 62.6 | 78.0 | 82.4 |
+| Site-cell pairs in line of sight, all cells (%) | 31.9 | 54.2 | 77.4 | 81.9 |
+
+At the user height 30.1% of the site-cell pairs are in line of sight; 94.5% of those are
+unblocked in the path-gain database, and 86.9% of the unblocked database entries are in line
+of sight (the others are reached by reflections only). 32.4% of the area is built; the
+median roof height is 17.9 m, the 90th percentile 24.6 m, the maximum 50 m. No valid site
+lies below a roof. The file has 385,378 bytes; the tables were computed with Sionna RT
+2.2.0 (Mitsuba 3.9.1).
+
 ## Licence
 
-The source arrays and this derived file are under the MIT licence of the repository.
+The source arrays and the compact database are under the MIT licence of the repository.
+`aerial_los.npz` is derived from the geometry of the `etoile` scene of Sionna RT
+(Apache-2.0), which is built from OpenStreetMap data, (c) OpenStreetMap contributors,
+available under the Open Database License (ODbL).

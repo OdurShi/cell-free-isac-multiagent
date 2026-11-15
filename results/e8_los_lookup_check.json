@@ -1,0 +1,44 @@
+{
+ "sample": {
+  "seed": 12345,
+  "free_cells_per_level": 400,
+  "sites_per_level": 40
+ },
+ "software": {
+  "sionna_rt": "2.2.0",
+  "mitsuba": "3.9.1",
+  "drjit": "1.5.0",
+  "variant": "metal_ad_mono_polarized",
+  "platform": "macOS-27.2.1-arm64-arm-64bit",
+  "numpy": "2.5.4"
+ },
+ "pairs": 64000,
+ "agreement_cell_centre": 1.0,
+ "agreement_position_in_cell": 0.99271875,
+ "per_level": [
+  {
+   "level_m": 10.0,
+   "pairs": 16000,
+   "agreement_cell_centre": 1.0,
+   "agreement_position_in_cell": 0.9889375
+  },
+  {
+   "level_m": 20.0,
+   "pairs": 16000,
+   "agreement_cell_centre": 1.0,
+   "agreement_position_in_cell": 0.988625
+  },
+  {
+   "level_m": 30.0,
+   "pairs": 16000,
+   "agreement_cell_centre": 1.0,
+   "agreement_position_in_cell": 0.9958125
+  },
+  {
+   "level_m": 40.0,
+   "pairs": 16000,
+   "agreement_cell_centre": 1.0,
+   "agreement_position_in_cell": 0.9975
+  }
+ ]
+}

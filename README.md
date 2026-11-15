@@ -1,12 +1,15 @@
-# Cell-free ISAC on a ray-traced scene: simulator and team-game access-point placement
+# Cell-free ISAC on a ray-traced scene: simulator, team-game access-point placement and operation
 
-Access-point (AP) placement for cell-free integrated sensing and communication (ISAC) on a
-ray-traced 3-D urban scene. The repository holds a Sionna RT simulator (channel database,
+Access-point (AP) placement and operation for cell-free integrated sensing and communication
+(ISAC) on a ray-traced 3-D urban scene. The repository holds a Sionna RT simulator (channel database,
 deployment environment, SAC training, simulated-annealing and genetic-algorithm baselines,
 desktop GUI) and a placement method built on its database: the APs form a team of agents,
 one agent per AP, each choosing one candidate site, with proofs of what the formulation
 guarantees and seven experiments that compare it with centralised optimisers of the same
-objective.
+objective. A second study operates the deployed network: every AP repeatedly chooses to
+transmit, to receive or to stay off while aerial targets move behind the buildings of the
+scene, and five further experiments ask where a distributed, per-AP method has an advantage
+over central control and where it does not.
 
 [![CI](https://github.com/OdurShi/cell-free-isac-multiagent/actions/workflows/ci.yml/badge.svg)](https://github.com/OdurShi/cell-free-isac-multiagent/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -115,11 +118,97 @@ gains `beta` (0 below -110 dB), the D-optimality sensing value
    reshaped: for the max-min variant plain best response and greedy stall on plateaus, and
    best response on a saturated-rate potential is the best method tested.
 
+Findings 5 to 8, on operating the deployed network, are in
+[The operation study](#the-operation-study) below.
+
 None of the ingredients is claimed to be new here: sensing-aware placement, learning-based
 placement, site selection on ray-traced maps, submodular guarantees and game-theoretic
 placement all exist. The contribution is the combination evaluated here: one objective on
 one ray-traced scene, analysed for its structure and optimised by team and centralised
 methods under a common count of objective evaluations.
+
+### The operation study
+
+<p align="center">
+  <img src="figures/teaser_operation.png" width="88%" alt="Top-down map of one slot: free airspace, deployed access points by mode, users, UAV paths and the lines of sight used for sensing">
+</p>
+<p align="center"><em>Scenario 0 of experiment E10 at slot 120: 24 deployed APs under the
+distributed controller, 15 users, four UAVs at 10, 20, 30 and 40 m with their paths, and the
+lines of sight between the active APs and the UAVs. The shading shows from which flight
+level the airspace above a cell is free
+(<code>scripts/make_figures.py --only teaser_operation</code>).</em></p>
+
+The placement study ends with the finding that, for one-shot placement, the team methods
+are not better optimisers than a tuned simulated annealing. It also has two modelling
+weaknesses: the sensing links are free-space links without blockage, and every AP transmits
+and receives. The operation study removes both and moves the question.
+
+**Question.** Where does a multi-agent (per-AP, distributed) method have a real advantage
+in cell-free ISAC? The hypothesis was: not in one-shot planning but in operation, in the
+repeated mode decisions of already deployed APs under blockage, moving targets, limited
+decision latency and failures, where the ray-traced geometry makes interactions local.
+
+**Model.** `D` APs are deployed. In every slot of 0.5 s each AP is off, transmits or
+receives (half-duplex); `T` is the set of transmitters and `R` the set of receivers. The
+team utility of a mode profile is
+
+    U = lam * R(T) / R_ref + (1 - lam) * mean_q s_q(T, R) / S_ref - c_tx |T| - c_rx |R|
+
+with the sum rate `R(T) = sum_k log2(1 + 1e12 * sum_{i in T} beta_{i,k})` of static ground
+users on the ray-traced path gains, the sensing value
+`s_q = log det(J_q + eps I) - 3 log eps` of UAV `q`,
+`J_q = sum_{m in T} sum_{n in R} v_m v_n w_m w_n (u_m + u_n)(u_m + u_n)^T`, and an energy
+cost per active AP. `v` is the line of sight of an AP to the UAV, taken from exact
+visibility tests on the scene (`data/aerial_los.npz`): a transmitter-receiver pair
+contributes only if both see the target. The UAVs fly random-waypoint paths through the
+free airspace of their flight level. With a physical reading of the simulator's sensing
+scale (a bistatic-range Fisher information in 1/m^2, [docs/theory.md](docs/theory.md),
+Section 11) the sensing quality is also reported as a Bayesian position error bound (PEB)
+in metres. Exact definitions: [docs/notes.md](docs/notes.md), Section 6.
+
+**What is added to the repository.**
+
+* `cfisac_ma/aerial.py` and `data/aerial_los.npz`: line-of-sight tables of the 345 valid
+  sites at four flight levels, planning points, UAV paths, the physical scale and the PEB;
+  blockage as an option of the placement problem (off by default, so E1-E7 are unchanged);
+* `cfisac_ma/operation.py`: the mode-selection game with incremental evaluation, the
+  interaction graph, distributed methods (sequential best response, best response on a
+  colouring, best response with pair moves, log-linear learning) and central ones (greedy,
+  simulated annealing, random search, exhaustive search with all equilibria), and the
+  online controllers;
+* five experiments (E8-E12) with result files, tables and figures
+  ([Operating the deployed network](#operating-the-deployed-network));
+* [docs/theory.md](docs/theory.md), Part II: Propositions 6-9 with proofs;
+  `tests/test_propositions_op.py` checks them on small instances.
+
+**What the operation study finds** (numbers and files in
+[Operating the deployed network](#operating-the-deployed-network)).
+
+5. Blockage matters for small deployments: a placement planned with free-space sensing
+   loses 5.7% of the blockage-aware utility with 4 APs and 0.4% with 16 on the simulator's
+   target trajectories, and its median position error bound is 51 m instead of 5.8 m with
+   4 APs.
+6. The mode game is an exact potential game for any costs, and an AP can compute its best
+   response from the aggregates of the users it reaches and the targets it sees. The
+   locality that the hypothesis relied on is not there: most deployed APs see the same
+   UAVs, the interaction graph of 24 APs has a density of 0.97, and best response on a
+   colouring is a sequential sweep.
+7. Unilateral equilibria can be arbitrarily bad (all APs off is an equilibrium of the
+   sensing-only game in every instance; best response and greedy started there stay
+   there). Joint moves of two adjacent APs remove this failure; with them the worst stable
+   profile of any small instance is 2.0% below the exhaustive optimum for the default
+   utility.
+8. In online tracking a distributed controller that converges within a slot and central
+   simulated annealing with the same number of evaluations and no delay reach the same
+   utility (0.9962 and 0.9967 of the best known at 10 m/s). The distributed controller is
+   ahead only through latency: central control is behind once its decisions are one slot
+   old (0.9945 at 10 m/s, 0.9870 at 40 m/s). If only one or two sub-rounds fit into a slot,
+   central control with up to 4 slots of delay is better at every speed tested. The
+   distributed controller sends about 20 messages per slot where the central one sends one
+   command.
+
+The hypothesis is therefore supported in one respect (no central round trip) and
+contradicted in the other (locality).
 
 ## Installation
 
@@ -141,6 +230,9 @@ pip install -e ".[dev]"
 
 The package reads the data from the `data/` directory of the clone (or from the directory
 named by `CFISAC_MA_DATA`), so install it in editable mode from a clone.
+
+Only `scripts/raytrace_scene.py`, which produced the line-of-sight tables in `data/`, needs
+Sionna RT (`pip install -e ".[rt]"`); every experiment runs on the shipped files.
 
 The simulator scripts have their own requirements (classic Gym, PyTorch, Sionna, the GUI
 toolkits), listed under [The simulator](#the-simulator). The package works with NumPy 1.24
@@ -261,6 +353,8 @@ The repository ships the data that the simulator, the experiments and the figure
 | `data/pathgain_db_u16.npz` | (847, 125, 125) uint16 and a (125, 125) mask, 5.1 MB | the same path gains in dB, quantised to 16 bits; blocked entries (below -110 dB) are code 0; plus the mask of outdoor cells | `cfisac_ma`, experiments E1-E7, figures |
 | `data/candidate_positions_3d.npy` | (847, 3) float64 | byte-identical copy of the simulator's file | `cfisac_ma` |
 | `data/manifest.json` | - | SHA-256 values of source and shipped files, encoding parameters, error against the source | `tests/test_data.py` |
+| `data/aerial_los.npz` | bit-packed booleans (4, 345, 15625) and (345, 15625), a (4, 125, 125) mask, 385 kB | line of sight from each valid site to each cell centre at the flight levels 10, 20, 30, 40 m and at the user height; cells that are free at each level | `cfisac_ma.aerial`, experiments E8-E12, `figures/teaser_operation.png` |
+| `data/aerial_manifest.json` | - | SHA-256 of `aerial_los.npz` and of the database it belongs to, software versions, statistics | `tests/test_aerial.py` |
 
 `scripts/build_database.py` derives the compact database from the simulator's array. The
 blocked mask and the set of 345 valid positions are identical to the source, and the largest
@@ -268,9 +362,16 @@ error of an unblocked gain is 0.000288 dB (`data/manifest.json`); `tests/test_da
 compares the two files entry by entry. The derivation is described step by step in
 [data/README.md](data/README.md).
 
+`scripts/raytrace_scene.py` writes the line-of-sight tables with exact visibility tests on
+Sionna's `etoile` scene, compares the simulator's database with a new trace
+(`results/e8_database_check.json`) and compares the table lookup of the package with exact
+tests (`results/e8_los_lookup_check.json`); [data/README.md](data/README.md) describes the
+arrays.
+
 Scenarios are generated from seeds: users from the simulator's hotspot mixture with
 `numpy.random.default_rng(seed)`, targets from 16 sample points on each of the simulator's two
-trajectories (`cfisac_ma/scenario.py`).
+trajectories (`cfisac_ma/scenario.py`). The operation study adds seeded planning points,
+planning users and UAV paths (`cfisac_ma/aerial.py`, `cfisac_ma/experiments_op.py`).
 
 ## Reproducing the results
 
@@ -278,7 +379,9 @@ All commands run on the shipped data, on a CPU.
 
 | Item | Command | Output |
 |---|---|---|
-| Everything below (tuning grids, E1-E7, figures, tables) | `python scripts/reproduce_all.py` | `results/`, `figures/` |
+| Everything below (both suites: tuning, E1-E12, figures, tables) | `python scripts/reproduce_all.py` | `results/`, `figures/` |
+| Placement suite only (tuning grids, E1-E7, their figures, tables) | `python scripts/reproduce_all.py --suite placement` | `results/`, `figures/`, `results/runtime.json` |
+| Operation suite only (calibration and tuning, E8-E12, their figures, tables) | `python scripts/reproduce_all.py --suite operation` | `results/`, `figures/`, `results/runtime_operation.json` |
 | E1 structure: violations, submodularity ratio, curvature | `python scripts/run_e1_structure.py` | `results/e1_structure.json`, `figures/e1_structure.png`, `figures/e1_eps.png` |
 | E2 small instances with brute-force optimum and all equilibria | `python scripts/run_e2_small_instances.py` | `results/e2_small_instances.json`, `figures/e2_small_instances.png` |
 | E3 full problem, N = 4, 8, 12, 16; user counts; credit assignment | `python scripts/run_e3_full_problem.py` | `results/e3_full_problem.json`, `figures/e3_*.png` |
@@ -286,18 +389,26 @@ All commands run on the shipped data, on a CPU.
 | E5 adaptation to moved hotspots | `python scripts/run_e5_adaptation.py` | `results/e5_adaptation.json`, `figures/e5_adaptation.png` |
 | E6 max-min variant | `python scripts/run_e6_maxmin.py` | `results/e6_maxmin.json`, `figures/e6_maxmin_*.png` |
 | E7 statistical channel versus ray-traced maps | `python scripts/run_e7_channel_model.py` | `results/e7_channel_model.json`, `figures/e7_channel_model.png` |
+| E8 blockage-aware sensing: placement with and without blockage, structure | `python scripts/run_e8_blockage.py` | `results/e8_blockage.json`, `figures/e8_blockage.png` |
+| E9 equilibria of the mode game on small deployments | `python scripts/run_e9_mode_equilibria.py` | `results/e9_mode_equilibria.json`, `figures/e9_equilibria.png` |
+| E10 online tracking: distributed against delayed central control | `python scripts/run_e10_online_tracking.py` | `results/e10_online_tracking.json`, `figures/e10_*.png` |
+| E11 locality and scaling of the interaction graph | `python scripts/run_e11_locality.py` | `results/e11_locality.json`, `figures/e11_*.png` |
+| E12 failures and repair | `python scripts/run_e12_failures.py` | `results/e12_failures.json`, `figures/e12_failures.png` |
 | Hyper-parameter grids on separate tuning scenarios | `python scripts/tune_baselines.py` | `results/tuning.json` |
+| Cost calibration and grids of the operation study on the tuning scenarios | `python scripts/tune_operation.py` | `results/tuning_operation.json` |
 | Figures from the result files (teaser included) | `python scripts/make_figures.py` | `figures/*.png` |
 | Tables from the result files | `python scripts/make_tables.py` | `results/tables.md` |
-| First-pass results (see [docs/notes.md](docs/notes.md)) | `python scripts/reproduce_all.py --settings pass1 --skip-tuning --skip-figures` | `results/pass1/` |
+| First-pass results (see [docs/notes.md](docs/notes.md)) | `python scripts/reproduce_all.py --settings pass1 --skip-tuning --skip-figures` | `results/pass1/` (E1-E7), `results/operation_pass1/` (E8-E12) |
+| Line-of-sight tables and checks of the database and of the lookup (needs Sionna RT) | `python scripts/raytrace_scene.py --los --check-database --check-lookup` | `data/aerial_los.npz`, `data/aerial_manifest.json`, `results/e8_database_check.json`, `results/e8_los_lookup_check.json` |
 | Compact database from the simulator's arrays in `simulation/` | `python scripts/build_database.py` | `data/` |
 | Tests and lint | `pytest`, `ruff check .` | |
 
 Every script accepts `--jobs N` (worker processes, default up to 10) and `--quick` (reduced
 sizes for a smoke test, written to `results/pass2-quick/`). Results do not depend on the
-number of processes: every task derives its random streams from its own arguments. The full
-run took 476.2 s of wall-clock time on a 10-core laptop (`results/runtime.json`, which also
-lists the time of each step and the machine).
+number of processes: every task derives its random streams from its own arguments. The
+placement suite took 476.2 s of wall-clock time on a 10-core laptop (`results/runtime.json`,
+which also lists the time of each step and the machine), the operation suite 277.5 s
+(`results/runtime_operation.json`).
 
 ## Main results
 
@@ -555,6 +666,358 @@ value of knowing which user is hidden from which site.
   links as in the simulator, and an optimum that is known only for the small instances.
   Limitations are listed in [docs/notes.md](docs/notes.md).
 
+## Operating the deployed network
+
+Experiments E8-E12. As in the previous section, all numbers are copied from
+[`results/tables.md`](results/tables.md) and table rows are verbatim; entries are means with
+95% Student-t intervals over scenarios. One evaluation is the utility of one complete mode
+profile: a best-response step of one AP is charged 3 (one per mode), a simulated-annealing
+proposal 1, a greedy step 2 per AP.
+
+**Setting.** Deployments are *planned* (greedy selection followed by best response on the
+blockage-aware placement utility over 64 planning points in the free airspace, for 60
+planning users from the hotspot mixture) or *random*. 15 users, four UAVs (one per flight
+level 10, 20, 30, 40 m) at 10 m/s unless stated otherwise, `lam = 0.5`. The energy costs
+`c_tx = 0.016`, `c_rx = 0.008` were calibrated on separate tuning scenarios so that about
+half of 24 APs are active (`results/tuning_operation.json`). **Timing.** A slot lasts 0.5 s.
+A distributed AP uses the current state and the modes its neighbours had after the previous
+sub-round; a controller is limited to a number of sub-rounds per slot or runs until an
+equilibrium. A central controller needs collection, solution and dissemination; a delay of
+`d` slots applies the solution computed for slot `t - d` at slot `t`, and `d = 0` is its
+ideal bound. **Messages.** An AP that changes its mode tells every neighbour in the
+interaction graph (two APs are neighbours if they share a reachable user or a visible UAV);
+a central controller sends one command per AP whose mode it changes. Target positions are
+known to whoever decides, and their distribution is not counted for either side.
+
+### E8: blockage-aware sensing (`results/e8_blockage.json`, `results/e8_database_check.json`)
+
+<p align="center"><img src="figures/e8_blockage.png" width="95%" alt="Utility lost, position error bound and unseen target points for placements with and without blockage"></p>
+
+<!-- results:begin -->
+| Flight level (m) | Free cells (%) | Site-cell pairs in line of sight, free cells (%) | Site-cell pairs in line of sight, all cells (%) |
+|---|---|---|---|
+| 10 | 60.9 | 50.5 | 31.9 |
+| 20 | 79.2 | 62.6 | 54.2 |
+| 30 | 98.7 | 78.0 | 77.4 |
+| 40 | 99.3 | 82.4 | 81.9 |
+<!-- results:end -->
+
+Line of sight is common above the roofs (median roof height 17.9 m) and scarce in the street
+canyons. A second check concerns the simulator's database: all 847 radio maps were traced
+again with Sionna RT 2.2.0.
+
+<!-- results:begin -->
+| `max_depth` | Radio maps compared | Identical blocked mask | Mean mask agreement | Smallest mask agreement | Mean absolute error (dB) | Largest absolute error (dB) |
+|---|---|---|---|---|---|---|
+| 3 | 847 | 716 | 0.99999 | 0.99898 | 0.0009 | 2.38 |
+| 4 | 60 | 0 | 0.99881 | 0.99603 | 0.1015 | 3.34 |
+<!-- results:end -->
+
+The stored database is reproduced with a tracing depth of 3, not with the depth of 4 that
+`simulation/generate_offline_database.py` sets on an attribute the solver does not read
+([docs/implementation_notes.md](docs/implementation_notes.md)).
+
+<!-- results:begin -->
+| Target points | N | Utility lost (%) | Sensing value lost (%) | Gap, rate part | Gap, sensing part | PEB median (m), aware / free-space | PEB 90th percentile (m), aware / free-space | Points no selected AP sees (%), aware / free-space | Sites shared (%) |
+|---|---|---|---|---|---|---|---|---|---|
+| Trajectory | 4 | 5.72 [4.43, 7.01] | 21.8 [17.1, 26.5] | -0.0200 [-0.0257, -0.0143] | 0.0528 [0.0418, 0.0638] | 5.78 / 50.68 | 73.4 / 144.5 | 0.0 / 4.5 | 38 [31, 44] |
+| Trajectory | 8 | 1.13 [0.75, 1.51] | 5.3 [4.0, 6.6] | -0.0089 [-0.0115, -0.0062] | 0.0167 [0.0126, 0.0208] | 1.09 / 1.25 | 9.7 / 56.1 | 0.0 / 0.0 | 64 [56, 71] |
+| Trajectory | 16 | 0.38 [0.27, 0.49] | 1.9 [1.5, 2.4] | -0.0041 [-0.0052, -0.0031] | 0.0071 [0.0055, 0.0087] | 0.33 / 0.35 | 2.9 / 5.0 | 0.0 / 0.0 | 76 [72, 80] |
+| Planning | 4 | 3.67 [2.59, 4.75] | 17.6 [13.5, 21.8] | -0.0136 [-0.0184, -0.0087] | 0.0329 [0.0253, 0.0406] | 38.95 / 92.44 | 130.2 / 147.6 | 4.8 / 8.1 | 49 [39, 58] |
+| Planning | 8 | 1.83 [1.53, 2.13] | 9.1 [7.7, 10.5] | -0.0115 [-0.0142, -0.0088] | 0.0231 [0.0194, 0.0268] | 5.83 / 9.13 | 90.2 / 121.8 | 2.3 / 4.3 | 61 [55, 67] |
+| Planning | 16 | 1.17 [0.94, 1.40] | 5.1 [4.2, 6.1] | -0.0077 [-0.0094, -0.0060] | 0.0163 [0.0132, 0.0193] | 1.32 / 1.81 | 18.3 / 47.0 | 1.2 / 2.1 | 68 [64, 73] |
+<!-- results:end -->
+
+Both placements are evaluated on the blockage-aware utility (best response, 20 scenarios).
+Ignoring blockage costs 5.7% of the utility with 4 APs on the simulator's trajectories and
+0.4% with 16; the loss is in the sensing part and is partly offset by a higher rate
+(negative gap of the rate part). With 4 APs the placement that ignores blockage leaves 4.5%
+of the trajectory points unseen and has a median position error bound of 50.68 m against
+5.78 m. On the planning points, which include the level of 10 m, the losses are 3.7%, 1.8%
+and 1.2%. The structure of the objective changes little (same estimators and sampled sets as
+E1):
+
+<!-- results:begin -->
+| Set function | Sensing model, target points | Violating triples (%) | Submodularity ratio | Diminishing-return ratio | Curvature | Implied greedy factor | Implied equilibrium factor |
+|---|---|---|---|---|---|---|---|
+| Sensing, joint roles `L` | Free space, trajectory points (E1) | 0.79 [0.73, 0.85] | 0.903 | 0.722 | 0.980 | 0.599 | 0.320 |
+| Sensing, joint roles `L` | Blockage-aware, trajectory points | 1.16 [1.08, 1.24] | 0.919 | 0.729 | 0.993 | 0.603 | 0.328 |
+| Sensing, joint roles `L` | Blockage-aware, planning points | 0.81 [0.76, 0.87] | 0.927 | 0.802 | 0.967 | 0.612 | 0.374 |
+| Team utility `U` (lam = 0.5) | Free space, trajectory points (E1) | 0.30 [0.22, 0.38] | 0.937 | 0.803 | 0.981 | 0.613 | 0.377 |
+| Team utility `U` (lam = 0.5) | Blockage-aware, trajectory points | 0.37 [0.28, 0.47] | 0.949 | 0.689 | 0.993 | 0.615 | 0.310 |
+| Team utility `U` (lam = 0.5) | Blockage-aware, planning points | 0.30 [0.23, 0.38] | 0.954 | 0.874 | 0.968 | 0.623 | 0.422 |
+<!-- results:end -->
+
+### E9: equilibria of the mode game (`results/e9_mode_equilibria.json`)
+
+<p align="center"><img src="figures/e9_equilibria.png" width="95%" alt="Ratio to the exhaustive optimum of equilibria and methods in the mode game"></p>
+
+<!-- results:begin -->
+| Utility / optimum, with energy cost | lam = 0.5 (team utility) | lam = 0 (sensing only) | lam = 1 (sum rate only) |
+|---|---|---|---|
+| Worst Nash equilibrium | 0.9676 [0.9590, 0.9762], min 0.8613 | 0.0000 [0.0000, 0.0000], min 0.0000 | 1.0000 [0.9999, 1.0000], min 0.9988 |
+| Mean over all Nash equilibria | 0.9842 [0.9799, 0.9885] | 0.8818 [0.8686, 0.8951] | 1.0000 [1.0000, 1.0000] |
+| Worst pair-stable profile | 0.9980 [0.9968, 0.9991], min 0.9797 | 0.9882 [0.9861, 0.9903], min 0.9600 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Best response, one run (random start) | 0.9928 [0.9906, 0.9951], min 0.8959 | 0.9868 [0.9846, 0.9891], min 0.9219 | 1.0000 [0.9999, 1.0000], min 0.9988 |
+| Best response, one run (all-off start) | 0.9944 [0.9919, 0.9968], min 0.9461 | 0.0000 [0.0000, 0.0000], min 0.0000 | 1.0000 [0.9999, 1.0000], min 0.9988 |
+| Best response (restarts) | 0.9997 [0.9995, 0.9999], min 0.9893 | 0.9988 [0.9983, 0.9993], min 0.9857 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Best response with pair moves, one run (all-off start) | 0.9991 [0.9984, 0.9998], min 0.9836 | 0.9968 [0.9955, 0.9981], min 0.9795 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Best response with pair moves (restarts) | 0.9998 [0.9996, 0.9999], min 0.9907 | 0.9977 [0.9967, 0.9986], min 0.9654 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Log-linear learning, then best response (all-off start) | 0.9960 [0.9945, 0.9974], min 0.9475 | 0.9909 [0.9889, 0.9930], min 0.9471 | 1.0000 [1.0000, 1.0000], min 1.0000 |
+| Greedy (all-off start) | 0.9971 [0.9955, 0.9987], min 0.9622 | 0.0000 [0.0000, 0.0000], min 0.0000 | 1.0000 [1.0000, 1.0000], min 0.9995 |
+| Simulated annealing | 0.9978 [0.9965, 0.9992], min 0.9532 | 0.9944 [0.9931, 0.9958], min 0.9623 | 1.0000 [1.0000, 1.0000], min 0.9997 |
+| Random search | 0.9742 [0.9714, 0.9770], min 0.9315 | 0.9751 [0.9721, 0.9780], min 0.9314 | 0.9758 [0.9728, 0.9787], min 0.9273 |
+<!-- results:end -->
+
+60 instances (8, 10 or 12 deployed APs); the optimum, all Nash equilibria and all
+pair-stable profiles (no single AP and no two APs can improve) are found by enumerating the
+`3^D` mode profiles; budgets of `60 D` evaluations. For the team utility the worst
+equilibrium is on average 3.2% below the optimum (13.9% in the worst instance) and the
+worst pair-stable profile 0.2% (2.0%). For sensing only, all APs off is an equilibrium in
+every instance: a lone transmitter or receiver gains nothing. Best response and greedy
+started from all-off stay there; best response with pair moves does not. Log-linear
+learning also leaves it. A tuned simulated annealing (0.9978) is better than a single
+best-response run (0.9928) and below best response with restarts at the same budget
+(0.9997).
+
+<!-- results:begin -->
+| lam | Costs | Active APs at the optimum | Nash equilibria | Pair-stable profiles | Instances with an equilibrium without a pair (%) | Equilibria without a pair (%) | Pair-stable profiles without a pair (%) | Best response from all-off ends without a pair (%) | Greedy ends without a pair (%) | Best response with pair moves from all-off ends without a pair (%) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0.5 | with energy cost | 8.85 [8.54, 9.16] | 4.10 [3.52, 4.68] | 1.33 [1.19, 1.48] | 0 [0, 0] | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 0 | 0 | 0 |
+| 0.5 | without energy cost | 9.95 [9.53, 10.37] | 4.37 [3.45, 5.29] | 1.32 [1.16, 1.47] | 0 [0, 0] | 0.0 [0.0, 0.0] | 0.0 [0.0, 0.0] | 0 | 0 | 0 |
+| 0 | with energy cost | 8.08 [7.74, 8.43] | 13.35 [11.16, 15.54] | 2.83 [2.60, 3.06] | 100 [100, 100] | 10.1 [8.8, 11.5] | 0.0 [0.0, 0.0] | 100 | 100 | 0 |
+| 0 | without energy cost | 9.48 [9.05, 9.92] | 27.63 [21.81, 33.46] | 7.57 [5.51, 9.62] | 100 [100, 100] | 10.0 [8.6, 11.3] | 0.0 [0.0, 0.0] | 100 | 100 | 0 |
+<!-- results:end -->
+
+### E10: online tracking (`results/e10_online_tracking.json`)
+
+<p align="center"><img src="figures/e10_delay.png" width="98%" alt="Utility of central controllers against their decision delay for four UAV speeds, with the distributed controllers as horizontal lines"></p>
+
+<!-- results:begin -->
+| Controller | Utility / best known | Tracking gain captured (%) | PEB median (m) | PEB 90th percentile (m) | Target-slots without a pair (%) | Sum rate (bit/s/Hz) | Active APs | Mode switches per slot | Evaluations per slot | Messages per slot |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Reference (best response with pair moves, restarts, no delay) | 1.0000 [1.0000, 1.0000] | 100.0 [100.0, 100.0] | 1.59 [1.38, 1.80] | 8.1 [6.5, 9.7] | 0.04 [0.00, 0.09] | 129.4 [126.1, 132.7] | 11.6 | 1.42 | 8724 | 1.4 |
+| Distributed, 1 sub-round per slot | 0.9644 [0.9618, 0.9670] | 58.2 [53.3, 63.1] | 1.98 [1.69, 2.27] | 12.3 [10.0, 14.6] | 0.08 [0.01, 0.15] | 129.2 [125.9, 132.5] | 12.7 | 0.26 | 3 | 5.9 |
+| Distributed, 2 sub-rounds per slot | 0.9790 [0.9773, 0.9808] | 75.2 [71.7, 78.7] | 1.79 [1.56, 2.03] | 10.3 [8.4, 12.2] | 0.11 [0.01, 0.21] | 129.3 [125.9, 132.7] | 12.3 | 0.39 | 6 | 8.8 |
+| Distributed, 8 sub-rounds per slot | 0.9927 [0.9917, 0.9937] | 91.5 [90.2, 92.8] | 1.66 [1.43, 1.88] | 8.7 [7.0, 10.5] | 0.04 [0.00, 0.10] | 129.3 [126.0, 132.6] | 11.8 | 0.63 | 25 | 14.3 |
+| Distributed, until equilibrium | 0.9962 [0.9957, 0.9967] | 95.6 [94.9, 96.3] | 1.62 [1.41, 1.84] | 8.4 [6.7, 10.1] | 0.04 [0.00, 0.09] | 129.3 [126.0, 132.5] | 11.7 | 0.80 | 98 | 19.7 |
+| Distributed, pair moves, until pair-stable | 0.9994 [0.9993, 0.9996] | 99.4 [99.2, 99.5] | 1.59 [1.38, 1.81] | 8.2 [6.6, 9.8] | 0.04 [0.00, 0.09] | 129.4 [126.0, 132.7] | 11.6 | 1.16 | 1423 | 684.3 |
+| Central annealing, full budget, delay 0 | 0.9967 [0.9962, 0.9972] | 96.2 [95.6, 96.7] | 1.62 [1.41, 1.83] | 8.3 [6.7, 9.9] | 0.04 [0.00, 0.09] | 129.3 [126.0, 132.6] | 11.7 | 1.03 | 98 | 1.0 |
+| Central annealing, full budget, delay 1 | 0.9945 [0.9939, 0.9951] | 93.6 [92.7, 94.5] | 1.65 [1.43, 1.86] | 8.7 [7.1, 10.4] | 0.05 [0.00, 0.11] | 129.3 [126.0, 132.6] | 11.7 | 1.03 | 98 | 1.0 |
+| Central annealing, full budget, delay 2 | 0.9923 [0.9915, 0.9932] | 91.0 [89.7, 92.3] | 1.69 [1.47, 1.90] | 9.2 [7.4, 10.9] | 0.08 [0.00, 0.18] | 129.3 [126.0, 132.6] | 11.7 | 1.02 | 98 | 1.0 |
+| Central annealing, full budget, delay 4 | 0.9878 [0.9867, 0.9889] | 85.6 [83.6, 87.6] | 1.77 [1.55, 1.99] | 10.0 [8.1, 11.9] | 0.13 [0.00, 0.27] | 129.3 [126.0, 132.6] | 11.7 | 1.02 | 98 | 1.0 |
+| Central annealing, full budget, delay 8 | 0.9779 [0.9763, 0.9794] | 73.9 [70.4, 77.3] | 1.98 [1.74, 2.22] | 12.4 [10.2, 14.5] | 0.21 [0.07, 0.36] | 129.3 [126.0, 132.6] | 11.7 | 1.00 | 98 | 1.0 |
+| Central greedy from scratch, delay 0 | 0.9960 [0.9955, 0.9965] | 95.3 [94.4, 96.2] | 1.66 [1.43, 1.88] | 8.5 [6.8, 10.2] | 0.19 [0.00, 0.39] | 129.1 [125.8, 132.3] | 11.5 | 2.11 | 649 | 2.1 |
+| Periodic re-optimisation (reference solver) | 0.9753 [0.9732, 0.9775] | 70.7 [66.3, 75.2] | 2.08 [1.80, 2.35] | 13.0 [10.9, 15.1] | 0.08 [0.00, 0.16] | 129.4 [126.1, 132.7] | 11.6 | 0.34 | 404 | 0.3 |
+| Static assignment (optimised at slot 0) | 0.9091 [0.8962, 0.9221] | 0.0 [0.0, 0.0] | 4.06 [3.16, 4.95] | 40.4 [29.2, 51.7] | 0.82 [0.19, 1.45] | 129.0 [125.4, 132.7] | 11.7 | 0.00 | 0 | 0.0 |
+<!-- results:end -->
+
+24 planned APs, 240 slots, 20 scenarios. All controllers start from the reference solution
+of slot 0; "best known" is, per slot, the best utility of any controller; the tracking gain
+captured is 0% for the static assignment and 100% for the best known. The interaction graph
+needs 23.1 colours for 24 APs, so one sub-round moves about one AP and "until equilibrium"
+means 31.6 sub-rounds per slot.
+
+<!-- results:begin -->
+| Speed (m/s) | Distributed, until equilibrium | Central, delay 0 | Central, delay 1 | Central, delay 2 | Central, delay 4 | Central, delay 8 | Static |
+|---|---|---|---|---|---|---|---|
+| 5 | 0.9963 [0.9956, 0.9970] | 0.9970 [0.9965, 0.9975] | 0.9957 [0.9951, 0.9963] | 0.9946 [0.9938, 0.9953] | 0.9922 [0.9912, 0.9933] | 0.9875 [0.9860, 0.9891] | 0.9127 [0.8987, 0.9267] |
+| 10 | 0.9962 [0.9957, 0.9967] | 0.9967 [0.9962, 0.9972] | 0.9945 [0.9939, 0.9951] | 0.9923 [0.9915, 0.9932] | 0.9878 [0.9867, 0.9889] | 0.9779 [0.9763, 0.9794] | 0.9091 [0.8962, 0.9221] |
+| 20 | 0.9963 [0.9957, 0.9969] | 0.9960 [0.9956, 0.9965] | 0.9918 [0.9913, 0.9923] | 0.9872 [0.9865, 0.9879] | 0.9772 [0.9761, 0.9783] | 0.9564 [0.9543, 0.9584] | 0.9072 [0.8976, 0.9168] |
+| 40 | 0.9959 [0.9954, 0.9965] | 0.9954 [0.9950, 0.9957] | 0.9870 [0.9864, 0.9875] | 0.9771 [0.9763, 0.9779] | 0.9565 [0.9550, 0.9579] | 0.9302 [0.9280, 0.9323] | 0.9045 [0.8948, 0.9143] |
+<!-- results:end -->
+
+With no delay, central annealing with the evaluations of the converged distributed
+controller has the same utility (within 0.001 of the best known at every speed). The first
+slot of delay costs it 0.0013 of the best known utility at 5 m/s, 0.0022 at 10 m/s, 0.0042
+at 20 m/s and 0.0084 at 40 m/s. The rate is the same for all controllers (129 bit/s/Hz);
+what is lost is sensing: the 90th percentile of the position
+error bound grows from 8.3 m (no delay) to 12.4 m (8 slots) at 10 m/s, and to 40.4 m for the
+static assignment.
+
+<!-- results:begin -->
+| Speed (m/s) | Distributed controller | Matched budget: first delay behind | Full budget: first delay behind | Full budget: largest delay still ahead |
+|---|---|---|---|---|
+| 5 | Distributed, 1 sub-round per slot | 0 | not up to 8 | 8 |
+| 5 | Distributed, 2 sub-rounds per slot | 0 | not up to 8 | 4 |
+| 5 | Distributed, 8 sub-rounds per slot | 1 | 4 | 1 |
+| 5 | Distributed, until equilibrium | 1 | 1 | 0 |
+| 10 | Distributed, 1 sub-round per slot | 2 | not up to 8 | 8 |
+| 10 | Distributed, 2 sub-rounds per slot | 1 | not up to 8 | 4 |
+| 10 | Distributed, 8 sub-rounds per slot | 1 | 4 | 1 |
+| 10 | Distributed, until equilibrium | 1 | 1 | at no delay |
+| 20 | Distributed, 1 sub-round per slot | 2 | not up to 8 | 8 |
+| 20 | Distributed, 2 sub-rounds per slot | 1 | 8 | 4 |
+| 20 | Distributed, 8 sub-rounds per slot | 0 | 2 | 1 |
+| 20 | Distributed, until equilibrium | 1 | 1 | at no delay |
+| 40 | Distributed, 1 sub-round per slot | 2 | 8 | 4 |
+| 40 | Distributed, 2 sub-rounds per slot | 2 | 8 | 4 |
+| 40 | Distributed, 8 sub-rounds per slot | 1 | 2 | 1 |
+| 40 | Distributed, until equilibrium | 0 | 0 | at no delay |
+<!-- results:end -->
+
+"Behind" and "ahead" are statements about the paired difference to the distributed
+controller in the same scenarios (95% interval excludes 0). Against the converged
+distributed controller, central control is behind from a delay of one slot (at 40 m/s
+already without delay). Against a distributed controller that can only do one or two
+sub-rounds per slot, a central controller with the full budget is ahead with 4 slots (2 s)
+of delay at every speed, and with 8 slots up to 20 m/s (one sub-round).
+
+<p align="center"><img src="figures/e10_subrounds.png" width="98%" alt="Utility and messages of the distributed controllers against the number of sub-rounds per slot"></p>
+
+Restricting every user and UAV to its 4 or 8 strongest APs gives a game with about 5 and
+10 colours, in which a sub-round moves several APs. With one sub-round per slot the
+clustered controllers are better than the exact one from 10 m/s on (0.9678 for clusters of 4
+against 0.9644 at 10 m/s, 0.9532 against 0.9364 at 40 m/s), and the clusters of 4 send fewer
+messages; run until equilibrium they end 0.6% (clusters of 8) and 2.4% (clusters of 4) below
+the exact controller run until equilibrium (`results/tables.md`, section E10).
+
+<!-- results:begin -->
+| Deployment, controller | Utility (normalisers of the planned deployment) | Sum rate (bit/s/Hz) | PEB median (m) | PEB 90th percentile (m) | Target-slots without a pair (%) | Active APs | Utility / best known of the same deployment |
+|---|---|---|---|---|---|---|---|
+| Planned, reference | 0.7390 [0.7310, 0.7470] | 129.4 [126.1, 132.7] | 1.59 [1.38, 1.80] | 8.1 [6.5, 9.7] | 0.04 [0.00, 0.09] | 11.6 | 1.0000 [1.0000, 1.0000] |
+| Planned, distributed, until equilibrium | 0.7362 [0.7282, 0.7442] | 129.3 [126.0, 132.5] | 1.62 [1.41, 1.84] | 8.4 [6.7, 10.1] | 0.04 [0.00, 0.09] | 11.7 | 0.9962 [0.9957, 0.9967] |
+| Planned, static assignment | 0.6718 [0.6603, 0.6834] | 129.0 [125.4, 132.7] | 4.06 [3.16, 4.95] | 40.4 [29.2, 51.7] | 0.82 [0.19, 1.45] | 11.7 | 0.9091 [0.8962, 0.9221] |
+| Random, reference | 0.6309 [0.6130, 0.6488] | 94.4 [88.9, 99.9] | 1.56 [1.29, 1.83] | 18.1 [12.4, 23.8] | 0.10 [0.00, 0.25] | 10.4 | 1.0000 [1.0000, 1.0000] |
+| Random, distributed, until equilibrium | 0.6285 [0.6105, 0.6465] | 94.3 [88.8, 99.9] | 1.60 [1.32, 1.87] | 18.2 [12.7, 23.7] | 0.13 [0.00, 0.31] | 10.4 | 0.9961 [0.9954, 0.9969] |
+| Random, static assignment | 0.5682 [0.5427, 0.5937] | 93.6 [87.8, 99.4] | 7.19 [1.06, 13.32] | 44.5 [29.4, 59.7] | 1.24 [0.18, 2.31] | 10.3 | 0.8996 [0.8757, 0.9236] |
+<!-- results:end -->
+
+Planning the deployment matters for operation: with the same controller the planned
+deployment has 37% more sum rate than a random one and half the 90th percentile of the
+position error bound; the median bound is the same.
+
+### E11: locality and scaling (`results/e11_locality.json`)
+
+<p align="center"><img src="figures/e11_locality.png" width="98%" alt="Density, colours, sub-rounds to equilibrium and utility of the exact and the clustered game against the number of deployed access points"></p>
+
+<!-- results:begin -->
+| D | Links kept | Users / UAVs | Density of the graph | Mean degree | Colours (greedy colouring) | Clique found | Share of the user and target terms an AP touches (%) |
+|---|---|---|---|---|---|---|---|
+| 12 | all links | 8 / 2 | 0.853 [0.787, 0.919] | 9.4 [8.7, 10.1] | 10.3 [9.8, 10.8] | 10.3 [9.8, 10.8] | 42.5 [38.0, 47.0] |
+| 12 | clusters of 4 | 8 / 2 | 0.352 [0.325, 0.378] | 3.9 [3.6, 4.2] | 4.4 [4.2, 4.6] | 4.2 [4.0, 4.5] | 26.7 [25.3, 28.0] |
+| 12 | clusters of 8 | 8 / 2 | 0.770 [0.713, 0.826] | 8.5 [7.8, 9.1] | 9.0 [8.5, 9.5] | 9.0 [8.5, 9.5] | 39.0 [35.4, 42.6] |
+| 24 | all links | 15 / 4 | 0.966 [0.951, 0.980] | 22.2 [21.9, 22.5] | 22.4 [21.9, 23.0] | 22.4 [21.9, 23.0] | 43.7 [40.8, 46.6] |
+| 24 | clusters of 4 | 15 / 4 | 0.168 [0.157, 0.178] | 3.9 [3.6, 4.1] | 5.0 [4.8, 5.3] | 4.2 [4.0, 4.5] | 15.1 [14.8, 15.4] |
+| 24 | clusters of 8 | 15 / 4 | 0.523 [0.497, 0.550] | 12.0 [11.4, 12.6] | 10.2 [9.9, 10.6] | 9.2 [8.8, 9.6] | 26.2 [25.4, 27.1] |
+| 48 | all links | 30 / 8 | 0.993 [0.988, 0.997] | 46.7 [46.4, 46.9] | 46.8 [46.2, 47.3] | 46.7 [46.1, 47.3] | 43.0 [40.8, 45.1] |
+| 48 | clusters of 4 | 30 / 8 | 0.081 [0.078, 0.084] | 3.8 [3.6, 4.0] | 5.1 [4.8, 5.4] | 4.3 [4.0, 4.7] | 7.7 [7.6, 7.8] |
+| 48 | clusters of 8 | 30 / 8 | 0.262 [0.250, 0.273] | 12.3 [11.8, 12.8] | 11.3 [11.0, 11.7] | 8.7 [8.3, 9.1] | 14.4 [14.1, 14.7] |
+| 96 | all links | 60 / 16 | 1.000 [1.000, 1.000] | 95.0 [95.0, 95.0] | 95.7 [95.5, 95.9] | 95.7 [95.5, 95.9] | 43.6 [42.4, 44.9] |
+| 96 | clusters of 4 | 60 / 16 | 0.034 [0.033, 0.035] | 3.3 [3.2, 3.3] | 5.2 [4.9, 5.4] | 4.2 [4.0, 4.3] | 3.9 [3.8, 3.9] |
+| 96 | clusters of 8 | 60 / 16 | 0.127 [0.124, 0.130] | 12.1 [11.8, 12.4] | 11.3 [11.0, 11.7] | 8.9 [8.4, 9.5] | 7.4 [7.3, 7.5] |
+<!-- results:end -->
+
+Static snapshots; the load grows with the deployment (15 D / 24 users, D / 6 UAVs). The
+interaction graph of the exact game is almost complete at every size, because most APs see
+the same UAVs (78.0% and 82.4% of the site-cell pairs are in line of sight at 30 and 40 m).
+The mean number of colours is within 0.1 of the mean size of the largest clique found, so
+no colouring can do much better: best response on the colouring needs about as many
+sub-rounds as a sequential sweep.
+
+<!-- results:begin -->
+| D | Active APs (best known) | Mode changes | Evaluations | Sub-rounds on the colouring | Cycles of colours | Terms recomputed per step: local / all |
+|---|---|---|---|---|---|---|
+| 12 | 8.2 [7.4, 8.9] | 13.3 [12.0, 14.7] | 101 [92, 110] | 29 [25, 32] | 2.77 [2.52, 3.03] | 9.5 / 30 |
+| 24 | 11.7 [11.3, 12.1] | 30.5 [28.2, 32.8] | 283 [257, 308] | 87 [79, 95] | 3.87 [3.56, 4.19] | 19.2 / 57 |
+| 48 | 13.2 [12.9, 13.6] | 47.4 [44.7, 50.1] | 595 [552, 638] | 197 [183, 211] | 4.21 [3.91, 4.50] | 37.8 / 114 |
+| 96 | 13.2 [12.7, 13.8] | 57.1 [54.2, 60.1] | 1259 [1098, 1421] | 414 [363, 466] | 4.33 [3.79, 4.86] | 77.3 / 228 |
+<!-- results:end -->
+
+<!-- results:begin -->
+| D | Best response: final / best known | Best response: reach 99% (%) | Best response: evaluations to 99% | Greedy: final / best known | Greedy: reach 99% (%) | Greedy: evaluations to 99% | Simulated annealing: final / best known | Simulated annealing: reach 99% (%) | Simulated annealing: evaluations to 99% |
+|---|---|---|---|---|---|---|---|---|---|
+| 12 | 0.9939 [0.9880, 0.9998] | 85 | 56 [49, 63] | 0.9960 [0.9927, 0.9993] | 85 | 181 [168, 194] | 0.9979 [0.9956, 1.0001] | 90 | 168 [95, 242] |
+| 24 | 0.9950 [0.9929, 0.9972] | 95 | 156 [135, 178] | 0.9946 [0.9911, 0.9981] | 90 | 539 [503, 574] | 0.9990 [0.9982, 0.9999] | 100 | 407 [300, 515] |
+| 48 | 0.9919 [0.9889, 0.9949] | 65 | 347 [292, 403] | 0.9935 [0.9912, 0.9959] | 80 | 1314 [1188, 1440] | 0.9929 [0.9892, 0.9966] | 75 | 897 [746, 1048] |
+| 96 | 0.9872 [0.9839, 0.9905] | 45 | 904 [665, 1143] | 0.9899 [0.9880, 0.9919] | 45 | 2581 [2234, 2928] | 0.9897 [0.9871, 0.9923] | 60 | 3507 [3072, 3941] |
+<!-- results:end -->
+
+From a cold start, best response reaches 99% of the best known utility with the fewest
+evaluations but ends lower than a simulated annealing whose schedule is tuned for each size;
+for 48 and 96 APs none of the three reaches 99% reliably, and the reference solver with
+pair moves is better (`figures/e11_evaluations.png`).
+
+<!-- results:begin -->
+| D | L | Colours | Sub-rounds to equilibrium | Full utility / best known | Active APs | After best response on the full game | Mode changes of that step |
+|---|---|---|---|---|---|---|---|
+| 12 | 4 | 4.4 [4.2, 4.6] | 11.3 [10.1, 12.5] | 0.9861 [0.9793, 0.9930] | 8.1 [7.4, 8.7] | 0.9931 [0.9882, 0.9980] | 1.1 [0.4, 1.7] |
+| 12 | 8 | 9.0 [8.5, 9.5] | 25.9 [22.0, 29.7] | 0.9932 [0.9884, 0.9980] | 8.4 [7.6, 9.2] | 0.9940 [0.9893, 0.9988] | 0.2 [-0.1, 0.6] |
+| 24 | 4 | 5.0 [4.8, 5.3] | 13.4 [12.3, 14.6] | 0.9429 [0.9101, 0.9757] | 12.6 [11.4, 13.8] | 0.9940 [0.9913, 0.9967] | 6.3 [4.1, 8.6] |
+| 24 | 8 | 10.2 [9.9, 10.6] | 31.4 [28.6, 34.2] | 0.9874 [0.9839, 0.9910] | 12.5 [12.0, 13.0] | 0.9936 [0.9916, 0.9956] | 1.9 [1.1, 2.6] |
+| 48 | 4 | 5.1 [4.8, 5.4] | 14.8 [13.0, 16.7] | 0.8936 [0.8707, 0.9165] | 15.8 [13.7, 18.0] | 0.9912 [0.9887, 0.9936] | 17.2 [14.5, 19.9] |
+| 48 | 8 | 11.3 [11.0, 11.7] | 34.4 [31.4, 37.3] | 0.9384 [0.9259, 0.9510] | 17.3 [16.3, 18.3] | 0.9868 [0.9816, 0.9919] | 10.2 [8.1, 12.4] |
+| 96 | 4 | 5.2 [4.9, 5.4] | 12.2 [10.8, 13.5] | 0.8614 [0.8250, 0.8979] | 10.3 [8.9, 11.8] | 0.9874 [0.9842, 0.9906] | 21.4 [19.1, 23.8] |
+| 96 | 8 | 11.3 [11.0, 11.7] | 33.2 [29.6, 36.9] | 0.8900 [0.8683, 0.9117] | 15.9 [13.3, 18.6] | 0.9882 [0.9847, 0.9917] | 21.4 [18.4, 24.3] |
+<!-- results:end -->
+
+Clustering restores sparsity (4 to 5 and 9 to 11 colours at every size, 11 to 34 sub-rounds
+to an equilibrium) at a price that grows with the deployment: evaluated on the full utility,
+the clustered equilibria reach 0.94 and 0.99 of the best known for 24 APs and 0.86 and 0.89
+for 96. Best response on the full game from there recovers 0.99 with fewer mode changes
+than from a cold start.
+
+### E12: failures (`results/e12_failures.json`)
+
+<p align="center"><img src="figures/e12_failures.png" width="95%" alt="Utility after failures for local repair, full best response and central re-solve, with evaluations and messages"></p>
+
+<!-- results:begin -->
+| State | Utility / best known after the failure | Utility / utility before the failure | PEB (m) | Active APs | APs allowed to move | APs that changed mode | Evaluations | Messages |
+|---|---|---|---|---|---|---|---|---|
+| Before the failure | - | 1.0000 [1.0000, 1.0000] | 7.39 [1.77, 13.01] | 11.7 [11.2, 12.1] | - | - | - | - |
+| After the failure, no repair | 0.8966 [0.8700, 0.9233] | 0.8400 [0.8081, 0.8718] | 32.39 [19.55, 45.23] | 7.7 [7.2, 8.1] | 0.0 | 0.00 | 0 | 0.0 |
+| Best response of the 1-hop neighbours of the failed APs | 0.9952 [0.9935, 0.9969] | 0.9314 [0.9201, 0.9428] | 12.92 [5.01, 20.83] | 10.7 [10.3, 11.1] | 19.9 | 4.18 | 153 | 150.7 |
+| Best response of the 2-hop neighbours | 0.9952 [0.9935, 0.9969] | 0.9314 [0.9201, 0.9428] | 12.92 [5.01, 20.83] | 10.7 [10.3, 11.1] | 19.9 | 4.18 | 153 | 150.7 |
+| Best response of the neighbours in the graph of clusters of 4 | 0.9922 [0.9891, 0.9953] | 0.9287 [0.9154, 0.9419] | 14.92 [6.25, 23.59] | 10.4 [10.0, 10.9] | 10.9 | 3.43 | 80 | 109.3 |
+| Best response of the neighbours in the graph of clusters of 8 | 0.9950 [0.9933, 0.9967] | 0.9312 [0.9198, 0.9426] | 13.26 [5.21, 21.31] | 10.7 [10.3, 11.1] | 17.6 | 4.12 | 133 | 142.8 |
+| Best response of all APs | 0.9952 [0.9935, 0.9969] | 0.9314 [0.9201, 0.9428] | 12.92 [5.01, 20.83] | 10.7 [10.3, 11.1] | 20.0 | 4.18 | 154 | 150.7 |
+| Central annealing, evaluations of the row above | 0.9933 [0.9894, 0.9972] | 0.9297 [0.9165, 0.9430] | 13.39 [5.45, 21.32] | 10.8 [10.4, 11.2] | 20.0 | 4.40 | 154 | 4.4 |
+| Central greedy from scratch | 0.9948 [0.9917, 0.9978] | 0.9311 [0.9192, 0.9429] | 13.81 [5.60, 22.01] | 10.6 [10.2, 11.1] | 20.0 | 5.52 | 503 | 5.5 |
+<!-- results:end -->
+
+24 APs at the reference equilibrium; 1, 2 or 4 active APs fail (the table shows 4; 20
+scenarios, 3 draws each). Without repair the utility falls to 0.985, 0.955 and 0.897 of the
+best known after the failure. Best response of the surviving APs restores 0.999, 0.996 and
+0.995 with 122 to 154 evaluations and changes 1.1 to 4.2 APs. Because the graph is dense,
+the 1-hop neighbourhood of the failed APs is almost the whole network; the neighbours in
+the graph of clusters of 4 (4.5 to 10.9 APs) reach 0.998, 0.994 and 0.992 with 22 to 80
+evaluations. Central annealing started from the surviving profile with the same evaluations
+is within 0.002 of full best response and needs 1.2 to 4.4 commands instead of 46 to 151
+messages; greedy from scratch needs 503 to 629 evaluations and changes more APs.
+
+### Where the multi-agent formulation helps in operation and where it does not
+
+* **Helps: no central round trip.** A distributed controller that converges within a slot
+  keeps 0.996 of the best known utility at every speed from 5 to 40 m/s. Central annealing
+  with the same evaluations matches it only without delay and is behind once its decisions
+  are one slot (0.5 s) old. This is a latency advantage, not a better optimiser.
+* **Helps: certificates and one repaired failure mode.** Every run ends in an equilibrium
+  (Proposition 6); an AP needs only the aggregates of its users and targets (Proposition
+  7). Pair moves remove the all-off trap of the sensing-only game, in which best response
+  and the central greedy both stay at utility 0.
+* **Helps: repair without a global re-solve.** After failures, best response from the
+  surviving profile restores 0.995 to 0.999 of the best known and changes few APs; greedy
+  from scratch costs three to five times the evaluations.
+* **Does not help: locality.** The interaction graph is almost complete (density 0.97 for
+  24 APs, 1.00 for 96), the colouring gives no parallelism, and convergence needs 28 to 44
+  sequential sub-rounds per slot. With one or two sub-rounds per slot the distributed
+  controller captures 58% and 75% of the tracking gain at 10 m/s, and a central controller
+  with 4 slots of delay is better.
+* **Does not help: messages.** The distributed controller sends 19.7 messages per slot at
+  10 m/s (59.8 at 40 m/s), the central one 1.0 commands (2.8), because every mode change is
+  announced to about 23 neighbours.
+* **Does not help: solution quality.** With no delay and equal evaluations central
+  annealing is as good; from a cold start a tuned annealing ends higher than one
+  best-response run (0.9990 against 0.9950 for 24 APs); warm-started annealing repairs
+  failures as well as best response.
+* **Mixed: clustering.** Restricting users and UAVs to their strongest APs buys the
+  parallelism that the exact game lacks and wins when very few sub-rounds fit into a slot,
+  but it converges to worse profiles and its cost grows with the deployment.
+* **Scope.** One scene; UAVs at 10 to 40 m, where most APs have line of sight; binary
+  blockage with free-space gains; target positions known exactly and without delay to
+  whoever decides; static users; a slot and sub-round timing model instead of a protocol.
+  Limitations: [docs/notes.md](docs/notes.md), Section 10.
+
 ## Method-to-code map
 
 | Item | Code |
@@ -576,6 +1039,23 @@ value of knowing which user is hidden from which site.
 | Confidence intervals | `src/cfisac_ma/stats.py`: `mean_ci` |
 | Figures | `src/cfisac_ma/plotting.py` |
 | Propositions 1-5, numerical checks | `tests/test_propositions.py` |
+| Line-of-sight tables, visibility lookup, free cells | `src/cfisac_ma/aerial.py`: `load_aerial_los`, `AerialLos.visible`, `AerialLos.is_free` |
+| Blockage-aware sensing in the placement problem | `scenario.py`: `make_problem(..., blockage=...)` |
+| Planning points, random-waypoint UAV paths | `aerial.py`: `planning_points`, `waypoint_path`, `target_tracks` |
+| Physical scale of the information matrix, position error bound | `aerial.py`: `sensing_scale`, `processing_gain_db_for_scale`, `position_error_bound` |
+| Mode-selection game: utility, parts, normalisers | `src/cfisac_ma/operation.py`: `ModeProblem.utility`, `ModeProblem.terms` |
+| Incremental evaluation of single and pair mode changes; the local form of Proposition 7 | `operation.py`: `ModeProblem.deviations`, `ModeProblem.pair_deviations`, `ModeProblem.local_gain` |
+| Interaction graph, colouring, clusters of the strongest APs, failed APs | `operation.py`: `ModeProblem.interaction_graph`, `greedy_colouring`, `clique_lower_bound`, `ModeProblem.clustered`, `ModeProblem.without` |
+| Proposition 6, sequential best response | `operation.py`: `best_response` |
+| Proposition 8, best response on a colouring | `operation.py`: `coloured_best_response` |
+| Proposition 9, pair moves; log-linear learning | `operation.py`: `pair_best_response`, `pair_gain_bound`, `log_linear_learning` |
+| Central methods on mode profiles | `operation.py`: `greedy`, `simulated_annealing`, `random_search`, `reference_solve` |
+| Exhaustive search, all Nash equilibria and pair-stable profiles | `operation.py`: `exhaustive_terms`, `utility_from_terms`, `equilibrium_masks` |
+| Episodes and online controllers, decision delay, message count | `operation.py`: `Episode`, `run_distributed`, `run_annealing`, `run_greedy`, `run_reference`, `delayed`, `command_messages` |
+| Deployments, scenarios, experiments E8-E12, calibration and tuning, settings of the two passes | `src/cfisac_ma/experiments_op.py`: `deploy`, `make_episode`, `run_e8` ... `run_e12`, `run_tuning`, `PASSES` |
+| Figures of the operation study | `src/cfisac_ma/plotting_op.py` |
+| Propositions 6-9, physical scale, numerical checks | `tests/test_propositions_op.py`, `tests/test_aerial.py`, `tests/test_operation.py` |
+| Exact line-of-sight tests and re-tracing of the database with Sionna RT | `scripts/raytrace_scene.py` |
 | Ray tracing of the radio maps | `simulation/generate_offline_database.py`, `simulation/main.py` |
 | Single-agent deployment environment, SAC, simulated annealing and genetic algorithm of the simulator | `simulation/isac_env.py`, `simulation/train.py`, `simulation/compare_baselines.py` |
 
@@ -597,26 +1077,33 @@ value of knowing which user is hidden from which site.
 │   ├── centralized.py     # greedy, SA, GA, random search, exhaustive search, equilibria
 │   ├── structure.py       # submodularity ratio, curvature, violation rates
 │   ├── experiments.py     # E1-E7 and their settings
+│   ├── aerial.py          # line-of-sight tables, planning points, UAV paths, physical scale
+│   ├── operation.py       # mode-selection game, distributed and central methods, controllers
+│   ├── experiments_op.py  # E8-E12, calibration and tuning, their settings
 │   ├── runner.py          # command-line entry point, JSON and CSV output
-│   ├── plotting.py        # all figures
+│   ├── plotting.py        # figures of E1-E7
+│   ├── plotting_op.py     # figures of E8-E12
 │   └── stats.py           # Student-t intervals
 ├── scripts/
-│   ├── reproduce_all.py   # everything with one command
+│   ├── reproduce_all.py   # everything with one command (--suite placement|operation|all)
 │   ├── run_e1_structure.py ... run_e7_channel_model.py
-│   ├── tune_baselines.py, make_figures.py, make_tables.py
+│   ├── run_e8_blockage.py ... run_e12_failures.py
+│   ├── tune_baselines.py, tune_operation.py, make_figures.py, make_tables.py
 │   ├── build_database.py  # derives data/ from the arrays in simulation/
+│   ├── raytrace_scene.py  # line-of-sight tables, database and lookup checks (needs Sionna RT)
 │   └── quickstart.py
-├── data/                  # compact database, candidate positions, manifest, README
-├── results/               # JSON and CSV of E1-E7, tables.md, tuning.json, runtime.json
-│   └── pass1/             # results of the first pass
+├── data/                  # compact database, candidate positions, line-of-sight tables, manifests, README
+├── results/               # JSON and CSV of E1-E12, tables.md, tuning files, runtime files
+│   ├── pass1/             # results of the first pass of E1-E7
+│   └── operation_pass1/   # results of the first pass of E8-E12
 ├── figures/               # PNG, 200 dpi
 ├── docs/
-│   ├── theory.md          # propositions, proofs, numerical evidence
-│   ├── notes.md           # assumptions, what was run, the two passes, limitations
+│   ├── theory.md          # propositions 1-9, proofs, numerical evidence
+│   ├── notes.md           # assumptions, what was run, the two passes, limitations (both studies)
 │   ├── frontier.md        # literature survey: open directions and positioning
-│   ├── implementation_notes.md   # notes on the simulator code and its release
-│   └── figures/           # sample outputs of the simulator
-├── tests/                 # offline tests: propositions, algorithms, data, simulator environment
+│   ├── implementation_notes.md   # notes on the simulator code, its release, the database check
+│   └── figures/           # sample outputs of the simulator, roof-height map
+├── tests/                 # offline tests: propositions, algorithms, data, operation, simulator environment
 ├── .github/workflows/ci.yml
 ├── pyproject.toml, requirements.txt
 └── LICENSE
@@ -672,7 +1159,12 @@ is discussed by [Wang et al., 2024](https://arxiv.org/abs/2408.03631).
 game over a discrete ray-traced candidate set with a joint rate and D-optimality utility,
 difference-reward utilities, the measured submodularity ratio and curvature of that utility,
 and a like-for-like comparison of best-response dynamics, greedy selection, simulated
-annealing and a genetic algorithm.
+annealing and a genetic algorithm. The operation study treats the selection of AP modes,
+which [Yan et al., 2024](https://arxiv.org/abs/2412.02649) solve centrally with heuristics,
+as a potential game on the same scene with blocked sensing links, and compares it with
+central optimisers of the same utility under an explicit timing model; it was positioned
+with the references above and claims no novelty of its ingredients
+([docs/frontier.md](docs/frontier.md)).
 
 ## References
 
@@ -685,6 +1177,9 @@ annealing and a genetic algorithm.
   in Complex Systems 4 (2001).
 * A. A. Bian, J. M. Buhmann, A. Krause and S. Tschiatschek, "Guarantees for greedy
   maximization of non-submodular functions with applications", ICML 2017.
+* S. M. Kay, "Fundamentals of Statistical Signal Processing: Estimation Theory", Prentice
+  Hall, 1993.
+* H. L. Van Trees, "Detection, Estimation, and Modulation Theory, Part I", Wiley, 1968.
 
 ## Citation
 
@@ -709,4 +1204,7 @@ If you use this code, please cite the paper it extends:
 MIT, see [LICENSE](LICENSE). The ray-tracing scripts rely on
 [Sionna](https://github.com/NVlabs/sionna) (Apache-2.0) and its built-in `etoile` scene; the
 SAC agent in `train.py` is named and structured after `AgentModSAC` of
-[ElegantRL](https://github.com/AI4Finance-Foundation/ElegantRL) (Apache-2.0).
+[ElegantRL](https://github.com/AI4Finance-Foundation/ElegantRL) (Apache-2.0). The
+line-of-sight tables in `data/aerial_los.npz` are derived from the geometry of that scene,
+which is built from OpenStreetMap data, (c) OpenStreetMap contributors, available under the
+Open Database License (ODbL).

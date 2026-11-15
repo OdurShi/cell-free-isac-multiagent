@@ -7,6 +7,10 @@ on the opened page; where the page lists no venue the entry is marked as an arXi
 Statements of the form "nothing found" describe this search (web search plus arXiv keyword
 queries), not a proof of absence.
 
+The operation study (experiments E8-E12, added on 2026-11-15) was positioned with the
+references already listed here; no new literature search was made for it, and no claim of
+novelty is attached to it. Sections 2 and 3 say how it relates to the directions below.
+
 Contents
 
 1. [Frontier directions](#1-frontier-directions)
@@ -50,11 +54,11 @@ algorithm.
 
 | Direction | In this repository |
 |---|---|
-| 1. Sensing-aware placement on site-specific candidate sets | the objective and the whole study: 345 ray-traced candidate sites, rate plus D-optimality (`src/cfisac_ma/objective.py`) |
-| 2. AP-as-agent learning with explicit credit assignment | Proposition 2 (difference utilities give the same game); bandit learners with team and difference rewards, compared per sample and per evaluation (E3) |
-| 3. Ray-traced digital twins as the planning substrate | all experiments run on the simulator's database; E7 measures what is lost when the placement is chosen on a statistical channel, the check that [15] calls for |
-| 4. Guarantees when the objective is not cleanly submodular | Propositions 3-5 separate the provably submodular parts from the joint utility; E1 measures the ratios and curvature, E2 the true equilibrium-to-optimum ratios on small instances |
-| 5. Game-theoretic placement and equilibrium quality | Proposition 1 (exact potential game), enumeration of all equilibria (E2), common evaluation budget for team and centralised methods (E3, E5, E6) |
+| 1. Sensing-aware placement on site-specific candidate sets | the objective and the whole study: 345 ray-traced candidate sites, rate plus D-optimality (`src/cfisac_ma/objective.py`); since E8 also with sensing links that are blocked by the buildings (line-of-sight tables of the scene), and E8 measures what a placement loses that ignores the blockage. The operation study then fixes the positions and selects the mode of every AP (transmit, receive, off), the problem of [5], with a rate plus D-optimality utility and an energy cost |
+| 2. AP-as-agent learning with explicit credit assignment | Proposition 2 (difference utilities give the same game); bandit learners with team and difference rewards, compared per sample and per evaluation (E3). In the mode game the difference utility of an AP is computed exactly from the aggregates of the users it reaches and the targets it sees (Proposition 7); no learner is used there |
+| 3. Ray-traced digital twins as the planning substrate | all experiments run on the simulator's database; E7 measures what is lost when the placement is chosen on a statistical channel, the check that [15] calls for. E8 traces the database again (it corresponds to a tracing depth of 3) and adds exact line-of-sight tests between the sites and the airspace, which E8-E12 use |
+| 4. Guarantees when the objective is not cleanly submodular | Propositions 3-5 separate the provably submodular parts from the joint utility; E1 measures the ratios and curvature, E2 the true equilibrium-to-optimum ratios on small instances. E8 repeats the measurement with blockage. For the mode game, Proposition 9 gives the submodular parts, an equilibrium with ratio 0 and what pair moves exclude; no approximation factor is proved, E9 measures the ratios on small deployments |
+| 5. Game-theoretic placement and equilibrium quality | Proposition 1 (exact potential game), enumeration of all equilibria (E2), common evaluation budget for team and centralised methods (E3, E5, E6). Operation: Proposition 6 (the mode game is an exact potential game), Proposition 8 (simultaneous moves of non-adjacent APs), enumeration of all equilibria and pair-stable profiles (E9), distributed against delayed central control of moving targets (E10), scaling of the interaction graph (E11), failures (E12) |
 | 6. LLM-assisted and agentic design | not addressed |
 
 **Claims this repository does not make.** It is not the first sensing-aware or CRLB-aware
@@ -65,18 +69,39 @@ digital-twin site selection, nor the first submodular guarantee on ray-traced ma
 placement ([21], [23]). It states the `(1 - 1/e)` and factor-two guarantees only for the
 parts of the objective that are proved monotone submodular, and reports measured ratios for
 the joint utility ([17]). It makes no statement that ray tracing changes the placement
-beyond what E7 measures on this scene ([15]). One further search hit, an Electronics Letters
-2024 article on ISAC-oriented AP placement (DOI 10.1049/ell2.70037), could not be opened and
-is not counted among the references.
+beyond what E7 and E8 measure on this scene ([15]). The operation study is not the first
+selection of AP modes in cell-free ISAC ([5]) and not the first distributed or multi-agent
+control of a cell-free network ([8], [10], [11]); it compares a potential-game controller
+with central optimisers of the same utility and reports where it is not better. One further
+search hit, an Electronics Letters 2024 article on ISAC-oriented AP placement (DOI
+10.1049/ell2.70037), could not be opened and is not counted among the references.
 
 ## 3. What remains open after the experiments
 
-Taken from the results and from the limitations in [notes.md](notes.md), Section 5:
+Taken from the results and from the limitations in [notes.md](notes.md), Sections 5 and 10:
 
-* **Ray-traced sensing links.** The sensing links use free-space gains without blockage, as
-  in the simulator; only the user links are ray-traced. With blockage the information matrix
-  of a target point loses the pairs that do not see it, which changes which sites complement
-  each other (the source of the non-submodular part found in E1).
+* **Ray-traced sensing links: blockage is addressed, propagation is not.** Since E8 the
+  sensing links can be masked by exact line-of-sight tests on the scene
+  (`data/aerial_los.npz`): a pair contributes to the information about a target only if both
+  its APs see the target. E8 measures the effect on the placement (a placement that ignores
+  blockage loses 5.7% of the utility with 4 APs and 0.4% with 16 on the simulator's
+  trajectories) and on the structure (violating triples of the joint-role sensing term 1.16%
+  with blockage against 0.79% without, on the same sampled sets). Still open: the gain of a
+  visible link is the free-space gain; reflected and diffracted paths, clutter, and a
+  radar cross-section that depends on the aspect are not modelled, and the visibility is
+  tabulated for cell centres at four flight levels only.
+* **Locality did not materialise for aerial targets.** The operation study assumed that
+  blockage makes the interactions between APs local. On this scene it does not: 78% and 82%
+  of the site-cell pairs are in line of sight at 30 and 40 m, most deployed APs see the same
+  targets, and the interaction graph of 24 APs has a density of 0.97 (E11). Best response on
+  a colouring is then a sequential sweep. Restricting every user and target to its 4 or 8
+  strongest APs gives a sparse graph at a cost in utility that grows with the deployment.
+  Open: targets below roof level, ground targets, or a larger area, where visibility is
+  local; and a sparsification with a bound on what it loses.
+* **Guarantee for the mode game.** Proposition 9 proves no approximation factor; an
+  equilibrium with ratio 0 exists for sensing only. The worst pair-stable profile of any
+  small instance of E9 was 2.0% below the optimum for the default utility and 4.6% below it
+  over all weights and cost settings, which is a measurement, not a bound.
 * **Guarantee for the joint-role utility.** The factors for the joint utility come from
   sampled extremes of the ratios and are not guarantees; a bound that uses the observation
   of E1 (violations almost only for base sets of at most one site) is not proved.
@@ -85,9 +110,15 @@ Taken from the results and from the limitations in [notes.md](notes.md), Section
   at a competitive number of evaluations, is not tested.
 * **More than one scene and carrier.** All numbers are for one scene at 28 GHz; E7 in
   particular (statistical against ray-traced channel) is scene-dependent by construction.
-* **Dynamics.** E5 moves hotspots once. A setting in which users and targets move
-  continuously and the team re-optimises online, with a cost per relocated AP, is the
-  natural use of the warm-start result.
+* **Dynamics.** E5 moves hotspots once; E10 lets the targets move continuously and
+  re-selects the modes of a fixed deployment in every slot. Open: moving users, relocating
+  APs with a cost per move, a cost per mode switch, and a controller that predicts the
+  target motion instead of reacting to it. In E10 the target positions are known exactly
+  and without delay to whoever decides; a tracker in the loop, whose error depends on the
+  modes chosen, is not simulated.
+* **Learning in operation.** No learner is used in E9-E12; whether a learned policy with
+  a few message rounds per slot does better than best response with as many sub-rounds is
+  not tested.
 * **Max-min.** The saturated-rate potential is chosen by hand; simulated annealing was tuned
   for the sum-rate utility only.
 

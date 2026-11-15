@@ -24,3 +24,6 @@ venv/
 /outputs/
 /results/pass2-quick/
 /results/pass1-quick/
+
+/results/operation_pass1-quick/
+/results/operation_pass2-quick/

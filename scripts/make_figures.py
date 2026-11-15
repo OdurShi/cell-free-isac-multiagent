@@ -1,9 +1,12 @@
 """Draw all figures of the repository from the result files.
 
 Usage: python scripts/make_figures.py [--results DIR] [--out DIR] [--only NAME ...]
+                                      [--suite placement|operation|all]
 
 Reads ``results/*.json`` (written by the ``run_e*.py`` scripts) and the shipped data and
-writes PNG files (200 dpi) to ``figures/``.
+writes PNG files (200 dpi) to ``figures/``.  ``--suite`` restricts the figures to those of
+the placement study (E1-E7, ``teaser``) or of the operation study (E8-E12,
+``teaser_operation``).
 """
 
 from __future__ import annotations
@@ -12,6 +15,7 @@ import argparse
 from pathlib import Path
 
 from cfisac_ma import plotting as pl
+from cfisac_ma import plotting_op as plo
 from cfisac_ma.runner import load_result, repo_root
 
 
@@ -20,6 +24,7 @@ def main() -> None:
     parser.add_argument("--results", type=Path, default=repo_root() / "results")
     parser.add_argument("--out", type=Path, default=repo_root() / "figures")
     parser.add_argument("--only", nargs="*", default=None, help="figure names (default: all)")
+    parser.add_argument("--suite", default="all", choices=("placement", "operation", "all"))
     args = parser.parse_args()
 
     def load(name):
@@ -43,6 +48,11 @@ def main() -> None:
         ),
         "e7_channel_model": lambda p: pl.figure_e7(load("e7"), p),
     }
+    operation = plo.figures(load)
+    if args.suite == "operation":
+        figures = operation
+    elif args.suite == "all":
+        figures.update(operation)
     names = args.only or list(figures)
     for name in names:
         path = figures[name](args.out / f"{name}.png")

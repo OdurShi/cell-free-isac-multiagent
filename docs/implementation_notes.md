@@ -100,3 +100,61 @@ in the same repository since 2026-11-15.
   `simulation/` is excluded because its scripts are kept as released.
 * **Name.** The repository was called `sionna-isac-simulation` until 2026-11-15 and is
   `cell-free-isac-multiagent` since; the old address redirects.
+
+## Check of the path-gain database and line-of-sight tables (2026-11-15)
+
+`scripts/raytrace_scene.py` is the only script of the placement package that runs Sionna RT
+(`pip install -e ".[rt]"`; Sionna RT 2.2.0 with Mitsuba 3.9.1 was used). It was run on the
+development machine; the experiments read the files it wrote and do not need Sionna.
+
+* **The stored database corresponds to `max_depth = 3`.**
+  `simulation/generate_offline_database.py` creates the solver with
+  `solver = RadioMapSolver()` and then sets `solver.max_depth = 4`, but calls it as
+  `solver(scene, cell_size=..., center=..., size=..., orientation=..., samples_per_tx=...)`
+  without a `max_depth` argument. In Sionna RT 2.2.0 the depth is an argument of the call
+  (default 3) and the solver object has no attribute of that name, so the assignment creates
+  an attribute that nothing reads. The check traced all 847 radio maps
+  again with the settings of the script (28 GHz, isotropic antennas with vertical
+  polarisation, 4 m cells at 1.5 m height, 5e6 samples per transmitter) and compared them
+  with `simulation/paris_pg_database_3d.npy` (`results/e8_database_check.json`):
+
+  | `max_depth` of the new trace | Radio maps | Identical blocked mask | Mean mask agreement | Mean absolute error (dB) | Largest absolute error (dB) |
+  |---|---|---|---|---|---|
+  | 3 | 847 | 716 | 0.99999 | 0.0009 | 2.38 |
+  | 4 | 60 (random sample) | 0 | 0.99881 | 0.1015 | 3.34 |
+
+  (blocked mask at -110 dB; errors over the cells unblocked in both). With depth 3 the
+  stored database is reproduced up to the Monte Carlo noise of the ray launching; with depth
+  4 no sampled map has the same blocked mask. The comment in the script ("add one more
+  reflection") therefore describes an intention, not what the stored file contains. The
+  simulator script was not changed, and nothing in the placement study depends on the depth:
+  it uses the stored database as it is. A database with depth 4 would have slightly fewer
+  blocked entries.
+* **Line-of-sight tables.** `raytrace_scene.py --los` loads the `etoile` scene, takes the 345
+  valid sites of the compact database and, for each site and each of the 15,625 cell centres,
+  tests the segment between them against the scene geometry with Mitsuba's `ray_test` (an
+  exact visibility query, no radio propagation), at the flight levels 10, 20, 30, 40 m and
+  at 1.5 m. The ray ends just before the target point (factor `1 - 1e-4` of the distance),
+  so a point on a surface is not blocked by that surface. The roof height is the first hit
+  of a downward ray from 500 m on a 1 m grid; a cell is *free* at a level if the highest
+  roof inside it is at least 2 m below the level. All tests of the five heights took 0.8 s
+  on the GPU backend. The result (`data/aerial_los.npz`, 385 kB) and its statistics are
+  described in `data/README.md`; `tests/test_aerial.py` checks the file against its manifest
+  and recomputes the statistics.
+* **Consistency with the database.** At the user height 94.5% of the site-cell pairs in line
+  of sight are unblocked in the database (the remaining 5.5% are in line of sight but below
+  -110 dB, i.e. far away), and 86.9% of the unblocked database entries are in line of sight;
+  the other 13.1% are served by reflections only. The two files were produced by different
+  queries (path gain above a threshold, geometric visibility) and are not expected to agree
+  exactly.
+* **Roof map.** `docs/figures/etoile_roof_height.png` (`raytrace_scene.py --los --figure`)
+  shows the roof heights that determine the free cells.
+* **Operation study.** `src/cfisac_ma/aerial.py`, `operation.py`, `experiments_op.py` and
+  `plotting_op.py`, the scripts `run_e8_*.py` ... `run_e12_*.py` and `tune_operation.py`, and
+  the tests `test_aerial.py`, `test_operation.py`, `test_propositions_op.py` were added on
+  the same day; `scenario.make_problem` got the option `blockage` (default off),
+  `runner.py`, `reproduce_all.py`, `make_figures.py` and `make_tables.py` were extended, and
+  `pyproject.toml` got the optional extra `rt`. Nothing under `simulation/` was changed.
+  `pytest` now runs 161 tests without the classic Gym package (2 modules skipped) and 171
+  with it. The record of that study is Part II of [theory.md](theory.md) and of
+  [notes.md](notes.md).

@@ -194,6 +194,7 @@ def make_problem(
     sites: np.ndarray | None = None,
     channel: str = "raytraced",
     exponent: float = 2.0,
+    blockage=None,
 ) -> Problem:
     """Placement problem of a scenario.
 
@@ -201,6 +202,11 @@ def make_problem(
         channel: ``"raytraced"`` (the shipped database), ``"free_space"`` or
             ``"log_distance"`` (statistical channels for the user links, see
             :func:`model_snr`); the sensing term is the same in all three.
+        blockage: ``None`` (default; free-space sensing links as in the simulator) or the
+            line-of-sight tables of :func:`cfisac_ma.aerial.load_aerial_los`.  With the
+            tables a site contributes to the information about a target point only if it
+            sees the point: its gain ``w`` is multiplied by the 0/1 visibility.  The target
+            points must lie on the flight levels of the tables.
         exponent: path-loss exponent of the ``"log_distance"`` channel.
         lam: weight of the communication term in the team utility.
         eps: regulariser of the D-optimality criterion, in the scaled units of the sensing
@@ -217,6 +223,8 @@ def make_problem(
     else:
         snr = model_snr(scene, scenario.users, channel, exponent, rho)
     w, u = sensing_geometry(scene.positions, scenario.targets)
+    if blockage is not None:
+        w = w * blockage.visible(scenario.targets)
     positions = scene.positions
     if sites is not None:
         sites = np.asarray(sites)
