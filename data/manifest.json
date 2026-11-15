@@ -1,0 +1,55 @@
+{
+  "source": {
+    "paris_pg_database_3d.npy": {
+      "sha256": "764aefed15f0d859436bb8fbc496ff61f32e4ba215f7fe3d33cf764377be5447",
+      "shape": [
+        11,
+        11,
+        7,
+        125,
+        125
+      ],
+      "dtype": "float32",
+      "bytes": 52937628
+    },
+    "candidate_positions_3d.npy": {
+      "sha256": "3fe343c9c1702f8a1b3ccf90e486766b9c81b2dc7eefcd4d4fd632c9a413a8c3",
+      "shape": [
+        847,
+        3
+      ]
+    }
+  },
+  "shipped": {
+    "pathgain_db_u16.npz": {
+      "sha256": "50fffe30b0bd5dcc1c4663f72e252af3db47c494c8f8f6baa787777cd180f5ad",
+      "bytes": 5078888
+    },
+    "candidate_positions_3d.npy": {
+      "sha256": "3fe343c9c1702f8a1b3ccf90e486766b9c81b2dc7eefcd4d4fd632c9a413a8c3",
+      "bytes": 20456
+    }
+  },
+  "encoding": {
+    "blocked_code": 0,
+    "blockage_threshold_db": -110.0,
+    "db_min": -110.0,
+    "db_step": 0.0005758337665038827,
+    "db_max": -72.26330994593455,
+    "levels": 65535
+  },
+  "statistics": {
+    "candidates": 847,
+    "valid_candidates": 345,
+    "blocked_fraction_all_entries": 0.8251080236127509,
+    "outdoor_cells": 10552
+  },
+  "error_vs_original": {
+    "blocked_mask_identical": true,
+    "valid_site_set_identical": true,
+    "max_abs_error_db": 0.00028791672497163745,
+    "max_relative_error_linear": 6.629747347219883e-05,
+    "rms_error_db": 0.0001661736911162506,
+    "outdoor_cells_differing_if_recomputed_from_shipped_gains": 84
+  }
+}

@@ -1,0 +1,1199 @@
+{
+ "tuning_seeds": [
+  1000,
+  1001,
+  1002,
+  1003,
+  1004
+ ],
+ "n_agents": 8,
+ "repetitions": 2,
+ "budget_factor": 6.0,
+ "checkpoints": [
+  0.125,
+  0.25,
+  0.5,
+  1.0
+ ],
+ "table": [
+  {
+   "method": "sa",
+   "config": 0,
+   "parameters": {
+    "t_start": 0.03,
+    "t_end": 1e-05,
+    "cooling_fraction": 0.1
+   },
+   "anytime_score": 0.9979801076054475,
+   "anytime_score_lo": 0.9964840254307089,
+   "anytime_score_hi": 0.9994761897801862,
+   "final_ratio": 0.9997096964770215,
+   "final_ratio_lo": 0.9989036846810733,
+   "final_ratio_hi": 1.0005157082729697,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 1,
+   "parameters": {
+    "t_start": 0.03,
+    "t_end": 1e-05,
+    "cooling_fraction": 0.3
+   },
+   "anytime_score": 0.9960385751706449,
+   "anytime_score_lo": 0.9946675275327751,
+   "anytime_score_hi": 0.9974096228085146,
+   "final_ratio": 0.9998478987472442,
+   "final_ratio_lo": 0.9994492785385128,
+   "final_ratio_hi": 1.0002465189559755,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 2,
+   "parameters": {
+    "t_start": 0.03,
+    "t_end": 1e-05,
+    "cooling_fraction": 1.0
+   },
+   "anytime_score": 0.9792981527951685,
+   "anytime_score_lo": 0.9760841935557365,
+   "anytime_score_hi": 0.9825121120346005,
+   "final_ratio": 0.9997497457168665,
+   "final_ratio_lo": 0.9994708700231911,
+   "final_ratio_hi": 1.0000286214105418,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 3,
+   "parameters": {
+    "t_start": 0.03,
+    "t_end": 1e-06,
+    "cooling_fraction": 0.1
+   },
+   "anytime_score": 0.9981709565263834,
+   "anytime_score_lo": 0.996693331104205,
+   "anytime_score_hi": 0.9996485819485619,
+   "final_ratio": 0.9998548482385108,
+   "final_ratio_lo": 0.9994518423405366,
+   "final_ratio_hi": 1.0002578541364848,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 4,
+   "parameters": {
+    "t_start": 0.03,
+    "t_end": 1e-06,
+    "cooling_fraction": 0.3
+   },
+   "anytime_score": 0.9973459811265422,
+   "anytime_score_lo": 0.996136294718261,
+   "anytime_score_hi": 0.9985556675348233,
+   "final_ratio": 0.9999385902203194,
+   "final_ratio_lo": 0.9997680893379969,
+   "final_ratio_hi": 1.0001090911026418,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 5,
+   "parameters": {
+    "t_start": 0.03,
+    "t_end": 1e-06,
+    "cooling_fraction": 1.0
+   },
+   "anytime_score": 0.9848399125004523,
+   "anytime_score_lo": 0.9809942093271684,
+   "anytime_score_hi": 0.9886856156737363,
+   "final_ratio": 0.9999720770465444,
+   "final_ratio_lo": 0.9998945504990471,
+   "final_ratio_hi": 1.0000496035940418,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 6,
+   "parameters": {
+    "t_start": 0.01,
+    "t_end": 1e-05,
+    "cooling_fraction": 0.1
+   },
+   "anytime_score": 0.9984221937370148,
+   "anytime_score_lo": 0.9973924948276994,
+   "anytime_score_hi": 0.9994518926463302,
+   "final_ratio": 0.9997367025176118,
+   "final_ratio_lo": 0.9990056715109229,
+   "final_ratio_hi": 1.0004677335243006,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 7,
+   "parameters": {
+    "t_start": 0.01,
+    "t_end": 1e-05,
+    "cooling_fraction": 0.3
+   },
+   "anytime_score": 0.9972210782243044,
+   "anytime_score_lo": 0.9967088986014085,
+   "anytime_score_hi": 0.9977332578472002,
+   "final_ratio": 0.9997936206502963,
+   "final_ratio_lo": 0.9993973157610541,
+   "final_ratio_hi": 1.0001899255395386,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 8,
+   "parameters": {
+    "t_start": 0.01,
+    "t_end": 1e-05,
+    "cooling_fraction": 1.0
+   },
+   "anytime_score": 0.9918804558969037,
+   "anytime_score_lo": 0.9900005765165703,
+   "anytime_score_hi": 0.9937603352772371,
+   "final_ratio": 1.0,
+   "final_ratio_lo": 0.9999999999999999,
+   "final_ratio_hi": 1.0,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 9,
+   "parameters": {
+    "t_start": 0.01,
+    "t_end": 1e-06,
+    "cooling_fraction": 0.1
+   },
+   "anytime_score": 0.9977530486410556,
+   "anytime_score_lo": 0.9961857768199868,
+   "anytime_score_hi": 0.9993203204621245,
+   "final_ratio": 0.9997096964770215,
+   "final_ratio_lo": 0.9989036846810733,
+   "final_ratio_hi": 1.0005157082729697,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 10,
+   "parameters": {
+    "t_start": 0.01,
+    "t_end": 1e-06,
+    "cooling_fraction": 0.3
+   },
+   "anytime_score": 0.9974258807734051,
+   "anytime_score_lo": 0.9957253073450338,
+   "anytime_score_hi": 0.9991264542017764,
+   "final_ratio": 0.9998548482385108,
+   "final_ratio_lo": 0.9994518423405367,
+   "final_ratio_hi": 1.0002578541364848,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 11,
+   "parameters": {
+    "t_start": 0.01,
+    "t_end": 1e-06,
+    "cooling_fraction": 1.0
+   },
+   "anytime_score": 0.9925873638829866,
+   "anytime_score_lo": 0.9911415118768515,
+   "anytime_score_hi": 0.9940332158891217,
+   "final_ratio": 0.9999930505087334,
+   "final_ratio_lo": 0.9999737556277098,
+   "final_ratio_hi": 1.000012345389757,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 12,
+   "parameters": {
+    "t_start": 0.003,
+    "t_end": 1e-05,
+    "cooling_fraction": 0.1
+   },
+   "anytime_score": 0.9987592401914751,
+   "anytime_score_lo": 0.9975194984481699,
+   "anytime_score_hi": 0.9999989819347803,
+   "final_ratio": 1.0,
+   "final_ratio_lo": 0.9999999999999999,
+   "final_ratio_hi": 1.0,
+   "used_in_final_settings": true
+  },
+  {
+   "method": "sa",
+   "config": 13,
+   "parameters": {
+    "t_start": 0.003,
+    "t_end": 1e-05,
+    "cooling_fraction": 0.3
+   },
+   "anytime_score": 0.9977664246170882,
+   "anytime_score_lo": 0.9962923805067873,
+   "anytime_score_hi": 0.9992404687273891,
+   "final_ratio": 0.9998548482385108,
+   "final_ratio_lo": 0.9994518423405366,
+   "final_ratio_hi": 1.0002578541364848,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 14,
+   "parameters": {
+    "t_start": 0.003,
+    "t_end": 1e-05,
+    "cooling_fraction": 1.0
+   },
+   "anytime_score": 0.9966318271115897,
+   "anytime_score_lo": 0.9951260158108377,
+   "anytime_score_hi": 0.9981376384123417,
+   "final_ratio": 0.9998548482385108,
+   "final_ratio_lo": 0.9994518423405366,
+   "final_ratio_hi": 1.0002578541364848,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 15,
+   "parameters": {
+    "t_start": 0.003,
+    "t_end": 1e-06,
+    "cooling_fraction": 0.1
+   },
+   "anytime_score": 0.9983556807150615,
+   "anytime_score_lo": 0.9975696539901517,
+   "anytime_score_hi": 0.9991417074399713,
+   "final_ratio": 0.9997936206502963,
+   "final_ratio_lo": 0.9993973157610542,
+   "final_ratio_hi": 1.0001899255395386,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 16,
+   "parameters": {
+    "t_start": 0.003,
+    "t_end": 1e-06,
+    "cooling_fraction": 0.3
+   },
+   "anytime_score": 0.9975636310988889,
+   "anytime_score_lo": 0.9962298847753482,
+   "anytime_score_hi": 0.9988973774224296,
+   "final_ratio": 0.9997936206502963,
+   "final_ratio_lo": 0.9993973157610541,
+   "final_ratio_hi": 1.0001899255395386,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 17,
+   "parameters": {
+    "t_start": 0.003,
+    "t_end": 1e-06,
+    "cooling_fraction": 1.0
+   },
+   "anytime_score": 0.9974743030108755,
+   "anytime_score_lo": 0.9966501760080771,
+   "anytime_score_hi": 0.9982984300136738,
+   "final_ratio": 0.9998548482385108,
+   "final_ratio_lo": 0.9994518423405366,
+   "final_ratio_hi": 1.0002578541364848,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sa",
+   "config": 18,
+   "parameters": {
+    "t_start": 100.0,
+    "cooling": 0.99
+   },
+   "anytime_score": 0.9959438952378162,
+   "anytime_score_lo": 0.9940531916599912,
+   "anytime_score_hi": 0.9978345988156413,
+   "final_ratio": 1.0,
+   "final_ratio_lo": 0.9999999999999999,
+   "final_ratio_hi": 1.0,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "ga",
+   "config": 0,
+   "parameters": {
+    "population": 20,
+    "mutation_rate": 0.1
+   },
+   "anytime_score": 0.9830436463778683,
+   "anytime_score_lo": 0.9764169658133187,
+   "anytime_score_hi": 0.989670326942418,
+   "final_ratio": 0.9957497528279529,
+   "final_ratio_lo": 0.9927517154441254,
+   "final_ratio_hi": 0.9987477902117803,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "ga",
+   "config": 1,
+   "parameters": {
+    "population": 20,
+    "mutation_rate": 0.3
+   },
+   "anytime_score": 0.991452599538112,
+   "anytime_score_lo": 0.9865537175991471,
+   "anytime_score_hi": 0.996351481477077,
+   "final_ratio": 0.9978018141120526,
+   "final_ratio_lo": 0.9955630874092686,
+   "final_ratio_hi": 1.0000405408148365,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "ga",
+   "config": 2,
+   "parameters": {
+    "population": 20,
+    "mutation_rate": 0.6
+   },
+   "anytime_score": 0.9933517567720784,
+   "anytime_score_lo": 0.9926485571030224,
+   "anytime_score_hi": 0.9940549564411345,
+   "final_ratio": 0.9985113757934989,
+   "final_ratio_lo": 0.9966842062642942,
+   "final_ratio_hi": 1.0003385453227036,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "ga",
+   "config": 3,
+   "parameters": {
+    "population": 50,
+    "mutation_rate": 0.1
+   },
+   "anytime_score": 0.9781705057381898,
+   "anytime_score_lo": 0.9680997087040902,
+   "anytime_score_hi": 0.9882413027722893,
+   "final_ratio": 0.9917077503124343,
+   "final_ratio_lo": 0.9848970136503209,
+   "final_ratio_hi": 0.9985184869745477,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "ga",
+   "config": 4,
+   "parameters": {
+    "population": 50,
+    "mutation_rate": 0.3
+   },
+   "anytime_score": 0.9903766402677258,
+   "anytime_score_lo": 0.9884822850532952,
+   "anytime_score_hi": 0.9922709954821564,
+   "final_ratio": 0.998281624792354,
+   "final_ratio_lo": 0.9972016988654945,
+   "final_ratio_hi": 0.9993615507192136,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "ga",
+   "config": 5,
+   "parameters": {
+    "population": 50,
+    "mutation_rate": 0.6
+   },
+   "anytime_score": 0.9914997388496515,
+   "anytime_score_lo": 0.9886725241486657,
+   "anytime_score_hi": 0.9943269535506373,
+   "final_ratio": 0.9990770498627661,
+   "final_ratio_lo": 0.9978400211127606,
+   "final_ratio_hi": 1.0003140786127716,
+   "used_in_final_settings": true
+  },
+  {
+   "method": "ga",
+   "config": 6,
+   "parameters": {
+    "population": 100,
+    "mutation_rate": 0.1
+   },
+   "anytime_score": 0.986888988896849,
+   "anytime_score_lo": 0.9837579005532406,
+   "anytime_score_hi": 0.9900200772404573,
+   "final_ratio": 0.9950868014995468,
+   "final_ratio_lo": 0.9915559844534098,
+   "final_ratio_hi": 0.9986176185456838,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "ga",
+   "config": 7,
+   "parameters": {
+    "population": 100,
+    "mutation_rate": 0.3
+   },
+   "anytime_score": 0.9905767080086669,
+   "anytime_score_lo": 0.985132600028347,
+   "anytime_score_hi": 0.9960208159889868,
+   "final_ratio": 0.9981561767370138,
+   "final_ratio_lo": 0.9968462295529467,
+   "final_ratio_hi": 0.999466123921081,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "ga",
+   "config": 8,
+   "parameters": {
+    "population": 100,
+    "mutation_rate": 0.6
+   },
+   "anytime_score": 0.9876849309850918,
+   "anytime_score_lo": 0.9838727083703299,
+   "anytime_score_hi": 0.9914971535998537,
+   "final_ratio": 0.9967795671953897,
+   "final_ratio_lo": 0.9943708870618554,
+   "final_ratio_hi": 0.9991882473289241,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-team",
+   "config": 0,
+   "parameters": {
+    "batch": 16,
+    "learning_rate": 1.0
+   },
+   "anytime_score": 0.9555443052224983,
+   "anytime_score_lo": 0.9471810410081845,
+   "anytime_score_hi": 0.9639075694368122,
+   "final_ratio": 0.990796788307844,
+   "final_ratio_lo": 0.9877030186827935,
+   "final_ratio_hi": 0.9938905579328945,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-team",
+   "config": 1,
+   "parameters": {
+    "batch": 16,
+    "learning_rate": 2.0
+   },
+   "anytime_score": 0.9770110852108969,
+   "anytime_score_lo": 0.9703232273814664,
+   "anytime_score_hi": 0.9836989430403273,
+   "final_ratio": 0.98854816780111,
+   "final_ratio_lo": 0.9838046516653886,
+   "final_ratio_hi": 0.9932916839368314,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-team",
+   "config": 2,
+   "parameters": {
+    "batch": 16,
+    "learning_rate": 4.0
+   },
+   "anytime_score": 0.9777112447804488,
+   "anytime_score_lo": 0.9735193906313941,
+   "anytime_score_hi": 0.9819030989295034,
+   "final_ratio": 0.9784766630308784,
+   "final_ratio_lo": 0.9738724054210205,
+   "final_ratio_hi": 0.9830809206407364,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-team",
+   "config": 3,
+   "parameters": {
+    "batch": 16,
+    "learning_rate": 8.0
+   },
+   "anytime_score": 0.9688936153138314,
+   "anytime_score_lo": 0.960541687084856,
+   "anytime_score_hi": 0.9772455435428069,
+   "final_ratio": 0.9690576802672662,
+   "final_ratio_lo": 0.9606524309017239,
+   "final_ratio_hi": 0.9774629296328086,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-team",
+   "config": 4,
+   "parameters": {
+    "batch": 16,
+    "learning_rate": 16.0
+   },
+   "anytime_score": 0.9606753284108734,
+   "anytime_score_lo": 0.9478284814034024,
+   "anytime_score_hi": 0.9735221754183445,
+   "final_ratio": 0.9606753284108734,
+   "final_ratio_lo": 0.9478284814034024,
+   "final_ratio_hi": 0.9735221754183445,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-team",
+   "config": 5,
+   "parameters": {
+    "batch": 32,
+    "learning_rate": 1.0
+   },
+   "anytime_score": 0.9321349384425183,
+   "anytime_score_lo": 0.9175954979854103,
+   "anytime_score_hi": 0.9466743788996262,
+   "final_ratio": 0.987018792360707,
+   "final_ratio_lo": 0.9811457161066305,
+   "final_ratio_hi": 0.9928918686147835,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-team",
+   "config": 6,
+   "parameters": {
+    "batch": 32,
+    "learning_rate": 2.0
+   },
+   "anytime_score": 0.9550567487007738,
+   "anytime_score_lo": 0.9495557822449371,
+   "anytime_score_hi": 0.9605577151566106,
+   "final_ratio": 0.9910337211934236,
+   "final_ratio_lo": 0.9861525330218965,
+   "final_ratio_hi": 0.9959149093649506,
+   "used_in_final_settings": true
+  },
+  {
+   "method": "bandit-team",
+   "config": 7,
+   "parameters": {
+    "batch": 32,
+    "learning_rate": 4.0
+   },
+   "anytime_score": 0.9760509958342503,
+   "anytime_score_lo": 0.9682803843372084,
+   "anytime_score_hi": 0.9838216073312921,
+   "final_ratio": 0.9880627420671741,
+   "final_ratio_lo": 0.9820595443797658,
+   "final_ratio_hi": 0.9940659397545825,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-team",
+   "config": 8,
+   "parameters": {
+    "batch": 32,
+    "learning_rate": 8.0
+   },
+   "anytime_score": 0.9830814124746879,
+   "anytime_score_lo": 0.976054273251537,
+   "anytime_score_hi": 0.9901085516978388,
+   "final_ratio": 0.9833076007444174,
+   "final_ratio_lo": 0.9762858891954669,
+   "final_ratio_hi": 0.9903293122933678,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-team",
+   "config": 9,
+   "parameters": {
+    "batch": 32,
+    "learning_rate": 16.0
+   },
+   "anytime_score": 0.9748341946747903,
+   "anytime_score_lo": 0.968173185481257,
+   "anytime_score_hi": 0.9814952038683236,
+   "final_ratio": 0.9748341946747903,
+   "final_ratio_lo": 0.968173185481257,
+   "final_ratio_hi": 0.9814952038683236,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-team",
+   "config": 10,
+   "parameters": {
+    "batch": 64,
+    "learning_rate": 1.0
+   },
+   "anytime_score": 0.9111056282110892,
+   "anytime_score_lo": 0.8970579602821329,
+   "anytime_score_hi": 0.9251532961400455,
+   "final_ratio": 0.9375464161889466,
+   "final_ratio_lo": 0.928801398013852,
+   "final_ratio_hi": 0.9462914343640413,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-team",
+   "config": 11,
+   "parameters": {
+    "batch": 64,
+    "learning_rate": 2.0
+   },
+   "anytime_score": 0.9322716792710098,
+   "anytime_score_lo": 0.9186112784275623,
+   "anytime_score_hi": 0.9459320801144574,
+   "final_ratio": 0.9886280163633179,
+   "final_ratio_lo": 0.983307125172789,
+   "final_ratio_hi": 0.9939489075538468,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-team",
+   "config": 12,
+   "parameters": {
+    "batch": 64,
+    "learning_rate": 4.0
+   },
+   "anytime_score": 0.9541830369429174,
+   "anytime_score_lo": 0.9490098966924316,
+   "anytime_score_hi": 0.9593561771934032,
+   "final_ratio": 0.989624736135713,
+   "final_ratio_lo": 0.9864468225076201,
+   "final_ratio_hi": 0.9928026497638059,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-team",
+   "config": 13,
+   "parameters": {
+    "batch": 64,
+    "learning_rate": 8.0
+   },
+   "anytime_score": 0.9740818832250115,
+   "anytime_score_lo": 0.9641297112620887,
+   "anytime_score_hi": 0.9840340551879344,
+   "final_ratio": 0.9859716658542432,
+   "final_ratio_lo": 0.9803855848013895,
+   "final_ratio_hi": 0.991557746907097,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-team",
+   "config": 14,
+   "parameters": {
+    "batch": 64,
+    "learning_rate": 16.0
+   },
+   "anytime_score": 0.9758026865628906,
+   "anytime_score_lo": 0.9631007044029004,
+   "anytime_score_hi": 0.9885046687228808,
+   "final_ratio": 0.9761239011874011,
+   "final_ratio_lo": 0.9631194642691788,
+   "final_ratio_hi": 0.9891283381056234,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 0,
+   "parameters": {
+    "batch": 4,
+    "learning_rate": 1.0
+   },
+   "anytime_score": 0.9342553833771694,
+   "anytime_score_lo": 0.9262614256319597,
+   "anytime_score_hi": 0.9422493411223791,
+   "final_ratio": 0.971349016283483,
+   "final_ratio_lo": 0.9610681943127152,
+   "final_ratio_hi": 0.9816298382542509,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 1,
+   "parameters": {
+    "batch": 4,
+    "learning_rate": 2.0
+   },
+   "anytime_score": 0.9434968611084307,
+   "anytime_score_lo": 0.9366335792898898,
+   "anytime_score_hi": 0.9503601429269716,
+   "final_ratio": 0.9568472711998945,
+   "final_ratio_lo": 0.9455740151141195,
+   "final_ratio_hi": 0.9681205272856696,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 2,
+   "parameters": {
+    "batch": 4,
+    "learning_rate": 4.0
+   },
+   "anytime_score": 0.944961765810848,
+   "anytime_score_lo": 0.9283174493497885,
+   "anytime_score_hi": 0.9616060822719075,
+   "final_ratio": 0.9494362684915172,
+   "final_ratio_lo": 0.9345504056523956,
+   "final_ratio_hi": 0.9643221313306388,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 3,
+   "parameters": {
+    "batch": 4,
+    "learning_rate": 8.0
+   },
+   "anytime_score": 0.9201586383383535,
+   "anytime_score_lo": 0.8818922966127095,
+   "anytime_score_hi": 0.9584249800639976,
+   "final_ratio": 0.9231085694592334,
+   "final_ratio_lo": 0.8864343400852803,
+   "final_ratio_hi": 0.9597827988331864,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 4,
+   "parameters": {
+    "batch": 4,
+    "learning_rate": 16.0
+   },
+   "anytime_score": 0.8765381616811609,
+   "anytime_score_lo": 0.849017153310816,
+   "anytime_score_hi": 0.9040591700515059,
+   "final_ratio": 0.8834526581266109,
+   "final_ratio_lo": 0.860174565837026,
+   "final_ratio_hi": 0.9067307504161958,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 5,
+   "parameters": {
+    "batch": 8,
+    "learning_rate": 1.0
+   },
+   "anytime_score": 0.9136302628591746,
+   "anytime_score_lo": 0.8990873020537093,
+   "anytime_score_hi": 0.9281732236646398,
+   "final_ratio": 0.9798125057226705,
+   "final_ratio_lo": 0.9770641484863168,
+   "final_ratio_hi": 0.9825608629590242,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 6,
+   "parameters": {
+    "batch": 8,
+    "learning_rate": 2.0
+   },
+   "anytime_score": 0.9383686731928,
+   "anytime_score_lo": 0.9252560563570794,
+   "anytime_score_hi": 0.9514812900285207,
+   "final_ratio": 0.9703656255909078,
+   "final_ratio_lo": 0.9556870143876257,
+   "final_ratio_hi": 0.9850442367941898,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 7,
+   "parameters": {
+    "batch": 8,
+    "learning_rate": 4.0
+   },
+   "anytime_score": 0.9579798273710983,
+   "anytime_score_lo": 0.9530777086032308,
+   "anytime_score_hi": 0.9628819461389658,
+   "final_ratio": 0.9624653634384603,
+   "final_ratio_lo": 0.9573943615646201,
+   "final_ratio_hi": 0.9675363653123006,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 8,
+   "parameters": {
+    "batch": 8,
+    "learning_rate": 8.0
+   },
+   "anytime_score": 0.949067614878536,
+   "anytime_score_lo": 0.9345125106471132,
+   "anytime_score_hi": 0.9636227191099588,
+   "final_ratio": 0.9506580190105687,
+   "final_ratio_lo": 0.9368886057635778,
+   "final_ratio_hi": 0.9644274322575596,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 9,
+   "parameters": {
+    "batch": 8,
+    "learning_rate": 16.0
+   },
+   "anytime_score": 0.921466763649064,
+   "anytime_score_lo": 0.8894491947781931,
+   "anytime_score_hi": 0.9534843325199349,
+   "final_ratio": 0.9221604144135668,
+   "final_ratio_lo": 0.8898824218032402,
+   "final_ratio_hi": 0.9544384070238934,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 10,
+   "parameters": {
+    "batch": 16,
+    "learning_rate": 1.0
+   },
+   "anytime_score": 0.8908985254897109,
+   "anytime_score_lo": 0.8783822927529283,
+   "anytime_score_hi": 0.9034147582264935,
+   "final_ratio": 0.9274895126139239,
+   "final_ratio_lo": 0.9108660665295616,
+   "final_ratio_hi": 0.9441129586982862,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 11,
+   "parameters": {
+    "batch": 16,
+    "learning_rate": 2.0
+   },
+   "anytime_score": 0.9203996367283468,
+   "anytime_score_lo": 0.9095214621754288,
+   "anytime_score_hi": 0.9312778112812647,
+   "final_ratio": 0.9823884202850135,
+   "final_ratio_lo": 0.9754847889128359,
+   "final_ratio_hi": 0.9892920516571911,
+   "used_in_final_settings": true
+  },
+  {
+   "method": "bandit-diff",
+   "config": 12,
+   "parameters": {
+    "batch": 16,
+    "learning_rate": 4.0
+   },
+   "anytime_score": 0.9493764824233544,
+   "anytime_score_lo": 0.9409658067842607,
+   "anytime_score_hi": 0.9577871580624481,
+   "final_ratio": 0.9793616967285775,
+   "final_ratio_lo": 0.9683898541008724,
+   "final_ratio_hi": 0.9903335393562827,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 13,
+   "parameters": {
+    "batch": 16,
+    "learning_rate": 8.0
+   },
+   "anytime_score": 0.9659508130120456,
+   "anytime_score_lo": 0.9536046620248756,
+   "anytime_score_hi": 0.9782969639992155,
+   "final_ratio": 0.9685632742654697,
+   "final_ratio_lo": 0.954051472966322,
+   "final_ratio_hi": 0.9830750755646175,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 14,
+   "parameters": {
+    "batch": 16,
+    "learning_rate": 16.0
+   },
+   "anytime_score": 0.9589253754791768,
+   "anytime_score_lo": 0.9457284838810899,
+   "anytime_score_hi": 0.9721222670772637,
+   "final_ratio": 0.9603610347640334,
+   "final_ratio_lo": 0.9489271607985518,
+   "final_ratio_hi": 0.9717949087295151,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 15,
+   "parameters": {
+    "batch": 32,
+    "learning_rate": 1.0
+   },
+   "anytime_score": 0.8832024923611892,
+   "anytime_score_lo": 0.8705281353245816,
+   "anytime_score_hi": 0.8958768493977968,
+   "final_ratio": 0.9083718697138516,
+   "final_ratio_lo": 0.8978576732523821,
+   "final_ratio_hi": 0.9188860661753212,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 16,
+   "parameters": {
+    "batch": 32,
+    "learning_rate": 2.0
+   },
+   "anytime_score": 0.8892613910149769,
+   "anytime_score_lo": 0.8689247571776939,
+   "anytime_score_hi": 0.9095980248522599,
+   "final_ratio": 0.9358274242863835,
+   "final_ratio_lo": 0.9178094100368608,
+   "final_ratio_hi": 0.9538454385359063,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 17,
+   "parameters": {
+    "batch": 32,
+    "learning_rate": 4.0
+   },
+   "anytime_score": 0.9192425199046035,
+   "anytime_score_lo": 0.908471656223729,
+   "anytime_score_hi": 0.9300133835854779,
+   "final_ratio": 0.9777254548953517,
+   "final_ratio_lo": 0.971737159806257,
+   "final_ratio_hi": 0.9837137499844464,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 18,
+   "parameters": {
+    "batch": 32,
+    "learning_rate": 8.0
+   },
+   "anytime_score": 0.948341737439798,
+   "anytime_score_lo": 0.9362507149034814,
+   "anytime_score_hi": 0.9604327599761145,
+   "final_ratio": 0.9771909768455128,
+   "final_ratio_lo": 0.9681250181899925,
+   "final_ratio_hi": 0.9862569355010331,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "bandit-diff",
+   "config": 19,
+   "parameters": {
+    "batch": 32,
+    "learning_rate": 16.0
+   },
+   "anytime_score": 0.9716350988384599,
+   "anytime_score_lo": 0.9626397064602269,
+   "anytime_score_hi": 0.9806304912166929,
+   "final_ratio": 0.9743551047233948,
+   "final_ratio_lo": 0.9665381567871251,
+   "final_ratio_hi": 0.9821720526596646,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sbr",
+   "config": 0,
+   "parameters": {
+    "n_random": 8,
+    "n_near": 0,
+    "patience_rounds": 5
+   },
+   "anytime_score": 0.9962977455226516,
+   "anytime_score_lo": 0.9940291909362496,
+   "anytime_score_hi": 0.9985663001090536,
+   "final_ratio": 0.9982456993231252,
+   "final_ratio_lo": 0.9969851590634904,
+   "final_ratio_hi": 0.9995062395827601,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sbr",
+   "config": 1,
+   "parameters": {
+    "n_random": 8,
+    "n_near": 8,
+    "patience_rounds": 5
+   },
+   "anytime_score": 0.9994678074390858,
+   "anytime_score_lo": 0.9989108217376395,
+   "anytime_score_hi": 1.0000247931405322,
+   "final_ratio": 0.9997936206502963,
+   "final_ratio_lo": 0.9993973157610541,
+   "final_ratio_hi": 1.0001899255395386,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sbr",
+   "config": 2,
+   "parameters": {
+    "n_random": 8,
+    "n_near": 16,
+    "patience_rounds": 5
+   },
+   "anytime_score": 0.9992802179369915,
+   "anytime_score_lo": 0.9988617153981388,
+   "anytime_score_hi": 0.9996987204758442,
+   "final_ratio": 0.9998234785610716,
+   "final_ratio_lo": 0.9993333764756605,
+   "final_ratio_hi": 1.0003135806464827,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sbr",
+   "config": 3,
+   "parameters": {
+    "n_random": 16,
+    "n_near": 0,
+    "patience_rounds": 5
+   },
+   "anytime_score": 0.9974906814438878,
+   "anytime_score_lo": 0.9962718777505748,
+   "anytime_score_hi": 0.9987094851372007,
+   "final_ratio": 0.9996094925634506,
+   "final_ratio_lo": 0.999021756264001,
+   "final_ratio_hi": 1.0001972288629,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sbr",
+   "config": 4,
+   "parameters": {
+    "n_random": 16,
+    "n_near": 8,
+    "patience_rounds": 5
+   },
+   "anytime_score": 0.9991864350866596,
+   "anytime_score_lo": 0.9988822306165205,
+   "anytime_score_hi": 0.9994906395567987,
+   "final_ratio": 1.0,
+   "final_ratio_lo": 0.9999999999999999,
+   "final_ratio_hi": 1.0,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sbr",
+   "config": 5,
+   "parameters": {
+    "n_random": 16,
+    "n_near": 16,
+    "patience_rounds": 5
+   },
+   "anytime_score": 0.9995550871504717,
+   "anytime_score_lo": 0.9988795508676056,
+   "anytime_score_hi": 1.0002306234333378,
+   "final_ratio": 1.0,
+   "final_ratio_lo": 0.9999999999999999,
+   "final_ratio_hi": 1.0,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sbr",
+   "config": 6,
+   "parameters": {
+    "n_random": 32,
+    "n_near": 0,
+    "patience_rounds": 5
+   },
+   "anytime_score": 0.9969616530342981,
+   "anytime_score_lo": 0.9958909648418707,
+   "anytime_score_hi": 0.9980323412267255,
+   "final_ratio": 0.9995990565334182,
+   "final_ratio_lo": 0.9992213019097552,
+   "final_ratio_hi": 0.9999768111570811,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sbr",
+   "config": 7,
+   "parameters": {
+    "n_random": 32,
+    "n_near": 8,
+    "patience_rounds": 5
+   },
+   "anytime_score": 0.9994740568910598,
+   "anytime_score_lo": 0.9990302987564214,
+   "anytime_score_hi": 0.9999178150256983,
+   "final_ratio": 1.0,
+   "final_ratio_lo": 0.9999999999999999,
+   "final_ratio_hi": 1.0,
+   "used_in_final_settings": false
+  },
+  {
+   "method": "sbr",
+   "config": 8,
+   "parameters": {
+    "n_random": 32,
+    "n_near": 16,
+    "patience_rounds": 5
+   },
+   "anytime_score": 0.9995990493112117,
+   "anytime_score_lo": 0.9990003507220362,
+   "anytime_score_hi": 1.0001977479003872,
+   "final_ratio": 1.0,
+   "final_ratio_lo": 1.0,
+   "final_ratio_hi": 1.0,
+   "used_in_final_settings": true
+  }
+ ],
+ "selected": {
+  "sa": {
+   "selected_config": {
+    "t_start": 0.003,
+    "t_end": 1e-05,
+    "cooling_fraction": 0.1
+   },
+   "final_ratio": 1.0,
+   "anytime_score": 0.9987592401914751,
+   "final_settings": {
+    "t_start": 0.003,
+    "t_end": 1e-05,
+    "cooling_fraction": 0.1
+   },
+   "final_settings_are_selected": true
+  },
+  "ga": {
+   "selected_config": {
+    "population": 50,
+    "mutation_rate": 0.6
+   },
+   "final_ratio": 0.9991,
+   "anytime_score": 0.9914997388496515,
+   "final_settings": {
+    "population": 50,
+    "mutation_rate": 0.6
+   },
+   "final_settings_are_selected": true
+  },
+  "bandit-team": {
+   "selected_config": {
+    "batch": 32,
+    "learning_rate": 2.0
+   },
+   "final_ratio": 0.991,
+   "anytime_score": 0.9550567487007738,
+   "final_settings": {
+    "batch": 32,
+    "learning_rate": 2.0
+   },
+   "final_settings_are_selected": true
+  },
+  "bandit-diff": {
+   "selected_config": {
+    "batch": 16,
+    "learning_rate": 2.0
+   },
+   "final_ratio": 0.9824,
+   "anytime_score": 0.9203996367283468,
+   "final_settings": {
+    "batch": 16,
+    "learning_rate": 2.0
+   },
+   "final_settings_are_selected": true
+  },
+  "sbr": {
+   "selected_config": {
+    "n_random": 32,
+    "n_near": 16,
+    "patience_rounds": 5
+   },
+   "final_ratio": 1.0,
+   "anytime_score": 0.9995990493112117,
+   "final_settings": {
+    "n_random": 32,
+    "n_near": 16,
+    "patience_rounds": 5
+   },
+   "final_settings_are_selected": true
+  }
+ },
+ "runtime_s": 30.8
+}

@@ -1,8 +1,26 @@
+# Python
 __pycache__/
 *.py[cod]
-.venv/
-.env
-.DS_Store
+*.egg-info/
 build/
 dist/
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Environments and local settings
+.venv/
+venv/
+.env
+.DS_Store
+.idea/
+.vscode/
+
+# data/, results/, figures/ and the arrays in simulation/ are tracked: the figures and tables
+# are reproduced from the shipped files. Scratch output of ad-hoc runs is not tracked.
+/scratch/
+/outputs/
+/results/pass2-quick/
+/results/pass1-quick/

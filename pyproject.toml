@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cfisac-ma"
+version = "0.1.0"
+description = "Team-game access-point placement for cell-free integrated sensing and communication on a ray-traced scene, with the Sionna RT simulator the scene comes from"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "The authors" }]
+keywords = [
+  "cell-free",
+  "ray tracing",
+  "sionna",
+  "integrated sensing and communication",
+  "access point placement",
+  "potential game",
+  "submodularity",
+  "multi-agent",
+]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = ["numpy>=1.24", "matplotlib>=3.7"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "ruff>=0.4"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+# simulation/ holds the simulator scripts as released; they are not part of the package.
+extend-exclude = [".venv", "results", "figures", "data", "simulation", "scenes"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "NPY"]
+
+[tool.ruff.lint.per-file-ignores]
+# isac_env.py draws from NumPy's global generator, so its test seeds that generator.
+"tests/test_isac_env.py" = ["NPY002"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

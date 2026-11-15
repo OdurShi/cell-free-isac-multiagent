@@ -1,0 +1,28 @@
+{
+ "settings": "pass1",
+ "jobs": 10,
+ "total_s": 605.6,
+ "load_average_at_end": [
+  50.95,
+  49.4,
+  46.34
+ ],
+ "steps_s": {
+  "e1": 219.2,
+  "e2": 64.2,
+  "e3": 146.0,
+  "e4": 25.7,
+  "e5": 53.0,
+  "e6": 91.5,
+  "e7": 5.6,
+  "tables": 0.4
+ },
+ "machine": {
+  "platform": "macOS-27.2.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "processor": "arm",
+  "cpu_count": 10,
+  "python": "3.12.16",
+  "numpy": "2.5.4"
+ }
+}
