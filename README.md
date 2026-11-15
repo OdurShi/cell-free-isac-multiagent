@@ -8,7 +8,7 @@ one agent per AP, each choosing one candidate site, with proofs of what the form
 guarantees and seven experiments that compare it with centralised optimisers of the same
 objective.
 
-[![CI](https://github.com/OdurShi/sionna-isac-simulation/actions/workflows/ci.yml/badge.svg)](https://github.com/OdurShi/sionna-isac-simulation/actions/workflows/ci.yml)
+[![CI](https://github.com/OdurShi/cell-free-isac-multiagent/actions/workflows/ci.yml/badge.svg)](https://github.com/OdurShi/cell-free-isac-multiagent/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.12-blue)](pyproject.toml)
 [![Code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)

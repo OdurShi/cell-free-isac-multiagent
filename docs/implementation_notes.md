@@ -98,3 +98,5 @@ in the same repository since 2026-11-15.
   of the package on Python 3.10 and 3.12, and the whole suite on Python 3.10 with `numpy<2`
   and `gym==0.26.2`. `ruff` is configured for the package, the scripts and the tests;
   `simulation/` is excluded because its scripts are kept as released.
+* **Name.** The repository was called `sionna-isac-simulation` until 2026-11-15 and is
+  `cell-free-isac-multiagent` since; the old address redirects.
